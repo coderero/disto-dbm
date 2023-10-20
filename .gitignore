@@ -1,5 +1,9 @@
 bin/*
+!bin/*.txt
+
 certs/jwt/*
+!certs/jwt/*.txt
+
 .env
 *.db
 .DS_Store
