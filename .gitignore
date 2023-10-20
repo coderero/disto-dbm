@@ -1,0 +1,5 @@
+bin/*
+certs/jwt/*
+.env
+*.db
+.DS_Store
