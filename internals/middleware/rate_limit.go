@@ -1,10 +1,11 @@
 package middleware
 
 import (
+	"net/http"
 	"sync"
 	"time"
 
-	"coderero.dev/projects/go/gin/hello/types"
+	types "coderero.dev/projects/go/gin/hello/types"
 	"github.com/gin-gonic/gin"
 )
 
@@ -25,8 +26,8 @@ func RateLimitHandler(limit int, duration time.Duration) gin.HandlerFunc {
 			currentIp[ip] = 1
 		} else {
 			if count >= limit {
-				c.AbortWithStatusJSON(429, types.Response{
-					Code:    429,
+				c.AbortWithStatusJSON(http.StatusTooManyRequests, types.Response{
+					Code:    http.StatusTooManyRequests,
 					Status:  "Too Many Requests",
 					Message: "You have exceeded your request limit",
 					Details: []any{},

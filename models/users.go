@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"time"
 
 	sql "coderero.dev/projects/go/gin/hello/db"
 	"gorm.io/gorm"
@@ -11,13 +12,16 @@ var db *gorm.DB
 
 // The User struct defines the structure of a user record in the database.
 type User struct {
-	gorm.Model
+	ID        uint   `gorm:"primarykey"`
 	Username  string `json:"username,omitempty" gorm:"unique;not null"`
 	Email     string `json:"email,omitempty" gorm:"unique;not null"`
 	Password  string `json:"password,omitempty" gorm:"not null"`
 	FirstName string `json:"firstname,omitempty" gorm:"not null"`
 	LastName  string `json:"lastname,omitempty" gorm:"not null"`
 	Age       int    `json:"age,omitempty" gorm:"not null"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
 // The above code defines a User struct and provides methods for creating, retrieving, updating, and
