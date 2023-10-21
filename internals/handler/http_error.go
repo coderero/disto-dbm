@@ -9,12 +9,12 @@ import (
 // status code and a JSON response indicating that the requested method is not allowed.
 func NoMethodHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.JSON(405, types.ErrorResponse{Error: types.ResponseSkeleton{
+		c.JSON(405, types.Response{
 			Code:    405,
 			Status:  "Method Not Allowed",
 			Message: "The requested method is not allowed",
 			Details: []any{},
-		}})
+		})
 		c.Next()
 	}
 
@@ -24,12 +24,12 @@ func NoMethodHandler() gin.HandlerFunc {
 // response with an error message.
 func NoRouteHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.JSON(404, types.ErrorResponse{Error: types.ResponseSkeleton{
+		c.JSON(404, types.Response{
 			Code:    404,
 			Status:  "Not Found",
 			Message: "The requested resource was not found",
 			Details: []any{},
-		}})
+		})
 		c.Next()
 	}
 }
@@ -37,11 +37,11 @@ func NoRouteHandler() gin.HandlerFunc {
 // The function InternalServerErrorHandler handles internal server errors by returning a JSON response
 // with a status code of 500 and an error message.
 func InternalServerErrorHandler(c *gin.Context, _ any) {
-	c.AbortWithStatusJSON(500, types.ErrorResponse{Error: types.ResponseSkeleton{
+	c.AbortWithStatusJSON(500, types.Response{
 		Code:    500,
 		Status:  "Internal Server Error",
 		Message: "The server encountered an internal error",
 		Details: []any{},
-	}})
+	})
 	c.Next()
 }

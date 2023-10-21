@@ -25,12 +25,12 @@ func RateLimitHandler(limit int, duration time.Duration) gin.HandlerFunc {
 			currentIp[ip] = 1
 		} else {
 			if count >= limit {
-				c.AbortWithStatusJSON(429, types.ErrorResponse{Error: types.ResponseSkeleton{
+				c.AbortWithStatusJSON(429, types.Response{
 					Code:    429,
 					Status:  "Too Many Requests",
 					Message: "You have exceeded your request limit",
 					Details: []any{},
-				}})
+				})
 				c.Next()
 				return
 			}
