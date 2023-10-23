@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"coderero.dev/projects/go/gin/hello/internals/router"
+	"coderero.dev/projects/go/gin/hello/pkg/utils"
 	"github.com/joho/godotenv"
 )
 
@@ -17,16 +18,16 @@ func init() {
 	godotenv.Load()
 
 	// Fuction to check for rsa key pair files in ./certs
-	// func() {
-	// 	files, err := os.ReadDir("./certs")
-	// 	if err != nil {
-	// 		panic(err)
-	// 	}
+	func() {
+		files, err := os.ReadDir("./certs")
+		if err != nil {
+			panic(err)
+		}
 
-	// 	if utils.ContainsFile(files, "private.key") && utils.ContainsFile(files, "public.pem") {
-	// 		return
-	// 	}
-	// }()
+		if utils.ContainsFile(files, "private.key") && utils.ContainsFile(files, "public.pem") {
+			return
+		}
+	}()
 
 	//Function to get the port and mode from the environment variables
 	func() {
