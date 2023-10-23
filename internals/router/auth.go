@@ -10,6 +10,6 @@ func authRouter(group *gin.RouterGroup) {
 	auth := new(controller.AuthController)
 
 	{
-		group.POST("/users", auth.Register)
+		group.POST("/signup", auth.SignUp)
 	}
 }

@@ -12,15 +12,15 @@ var db *gorm.DB
 
 // The User struct defines the structure of a user record in the database.
 type User struct {
-	ID        uint   `gorm:"primarykey"`
-	Username  string `json:"username,omitempty" gorm:"unique;not null"`
-	Email     string `json:"email,omitempty" gorm:"unique;not null"`
-	Password  string `json:"password,omitempty" gorm:"not null"`
-	FirstName string `json:"firstname,omitempty" gorm:"not null"`
-	LastName  string `json:"lastname,omitempty" gorm:"not null"`
-	Age       int    `json:"age,omitempty" gorm:"not null"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        uint           `json:"id" gorm:"primarykey"`
+	Username  string         `json:"username,omitempty" gorm:"unique;not null"`
+	Email     string         `json:"email,omitempty" gorm:"unique;not null"`
+	Password  string         `json:"-" gorm:"not null"`
+	FirstName string         `json:"firstname,omitempty" gorm:"not null"`
+	LastName  string         `json:"lastname,omitempty" gorm:"not null"`
+	Age       int            `json:"age,omitempty" gorm:"not null"`
+	CreatedAt time.Time      `json:"-"`
+	UpdatedAt time.Time      `json:"-"`
 	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
@@ -38,9 +38,9 @@ func init() {
 	db.AutoMigrate(&User{})
 }
 
-func (u *User) Create() *User {
-	db.Model(&u).Create(&u)
-	return u
+func (u *User) Create() (*User, error) {
+	err := db.Model(&u).Create(&u)
+	return u, err.Error
 }
 
 func (u *User) GetUserById(id int) *User {

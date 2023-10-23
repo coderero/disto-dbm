@@ -19,7 +19,7 @@ func init() {
 	godotenv.Load()
 
 	func() {
-		files, err := os.ReadDir("./certs/jwt")
+		files, err := os.ReadDir("./certs")
 		if err != nil {
 			panic(err)
 		}

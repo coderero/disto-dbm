@@ -23,7 +23,7 @@ func Router() *gin.Engine {
 	r.Use(middleware.RateLimitHandler(100, time.Second))
 
 	// Sub-Routers
-	sub := r.Group("/api/v0")
+	sub := r.Group("/api/v1")
 
 	// Route Handlers
 	authRouter(sub)

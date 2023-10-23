@@ -15,56 +15,64 @@ import (
 type AuthController struct{}
 
 // The GetUsers function returns a JSON response with a success message and an empty array of details.
-func (*AuthController) Register(c *gin.Context) {
+func (*AuthController) SignUp(c *gin.Context) {
 	// Create a new Register struct
-	var register types.Register
+	var signup types.SignUp
 
 	if utils.CheckContentType(c, types.Application_x_www_form) {
 		return
 	}
 
 	gal := galidator.New()
-	customizer := gal.Validator(register, galidator.Messages{
+	customizer := gal.Validator(signup, galidator.Messages{
 		"required": "$field is required",
 		"email":    "$field must be a valid email address",
 		"min":      "$field is of wrong length or too short",
 	})
 
 	// Bind the form data to the Register struct
-	if err := c.ShouldBindWith(&register, binding.Form); err != nil {
-
+	if err := c.ShouldBindWith(&signup, binding.Form); err != nil {
 		c.JSON(http.StatusBadRequest, types.Response{
-			Code:    http.StatusBadRequest,
-			Status:  "Bad Request",
-			Message: "Fields are required",
-			Details: []any{
+			Status:     false,
+			StatusCode: http.StatusBadRequest,
+			Message:    "Fields are required",
+			Data: []any{
 				customizer.DecryptErrors(err),
 			}})
 		return
 	}
 
-	hashPassword, err := security.HashPassword(register.Password)
+	hashPassword, err := security.HashPassword(signup.Password)
 	if err != nil {
 		panic(err)
 	}
 	user := &models.User{
-		Username:  register.Username,
-		Email:     register.Email,
+		Username:  signup.Username,
+		Email:     signup.Email,
 		Password:  hashPassword,
-		FirstName: register.FirstName,
-		LastName:  register.LastName,
-		Age:       register.Age,
+		FirstName: signup.FirstName,
+		LastName:  signup.LastName,
+		Age:       signup.Age,
 	}
 
-	obj := user.Create()
+	obj, err := user.Create()
+	if err != nil {
+		c.JSON(http.StatusConflict, types.Response{
+			Status:     false,
+			StatusCode: http.StatusConflict,
+			Message:    "User already exists",
+			Data:       []any{},
+		})
+		return
+	}
 
 	c.JSON(http.StatusCreated, types.Response{
-		Code:    http.StatusCreated,
-		Status:  "Created",
-		Message: "User created successfully",
-		Details: []any{
-			obj,
-		},
+		Status:     true,
+		StatusCode: http.StatusCreated,
+		Message:    "User created successfully",
+		Data: []any{map[string]any{
+			"user": obj,
+		}},
 	})
 
 }
@@ -77,10 +85,10 @@ func loginValidation(c *gin.Context, register types.Login) bool {
 
 	if (register.Username == "" || register.Password == "") || (register.Email != "" && register.Password != "") {
 		c.JSON(http.StatusUnprocessableEntity, types.Response{
-			Code:    http.StatusUnprocessableEntity,
-			Status:  "Unprocessable Entity",
-			Message: "Either Fields is required",
-			Details: []any{
+			Status:     false,
+			StatusCode: http.StatusUnprocessableEntity,
+			Message:    "Either Fields is required",
+			Data: []any{
 				"username",
 				"email",
 			},

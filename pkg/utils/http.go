@@ -8,10 +8,9 @@ import (
 func CheckContentType(ctx *gin.Context, t string) bool {
 	if ctx.Request.Header.Get("Content-Type") != t {
 		ctx.JSON(422, types.Response{
-			Code:    422,
-			Status:  "Unprocessable Entity",
+			Status:  false,
 			Message: "The request body must be of type 'application/x-www-form-urlencoded'",
-			Details: []any{},
+			Data:    []any{},
 		})
 		return true
 	}
