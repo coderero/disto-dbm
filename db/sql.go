@@ -13,7 +13,9 @@ var db *gorm.DB
 // The `init` function initializes a connection to a SQLite database using the GORM library in Go.
 func init() {
 	db_local, err := gorm.Open(sqlite.Open("gorm.db"), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Silent),
+		Logger:                 logger.Default.LogMode(logger.Silent),
+		SkipDefaultTransaction: true,
+		PrepareStmt:            true,
 	})
 	if err != nil {
 		panic("failed to connect database")

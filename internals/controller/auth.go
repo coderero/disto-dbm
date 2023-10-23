@@ -41,10 +41,14 @@ func (*AuthController) SignUp(c *gin.Context) {
 			}})
 		return
 	}
+	err3 := CheckIfExists(signup, c)
+	if err3 {
+		return
+	}
 
-	hashPassword, err := security.HashPassword(signup.Password)
-	if err != nil {
-		panic(err)
+	hashPassword, err1 := security.HashPassword(signup.Password)
+	if err1 != nil {
+		panic(err1)
 	}
 	user := &models.User{
 		Username:  signup.Username,
@@ -55,26 +59,44 @@ func (*AuthController) SignUp(c *gin.Context) {
 		Age:       signup.Age,
 	}
 
-	obj, err := user.Create()
-	if err != nil {
+	obj := user.Create()
+
+	c.JSON(http.StatusCreated, types.Response{
+		Status:     true,
+		StatusCode: http.StatusCreated,
+		Message:    "User created successfully",
+		Data: []any{
+			obj,
+		},
+	})
+
+}
+
+func CheckIfExists(signup types.SignUp, c *gin.Context) bool {
+	var checkModel *models.User
+	check := checkModel.GetUserByEmail(signup.Email)
+	check1 := checkModel.GetUserByUsername(signup.Username)
+
+	if check.Email != "" || check1.Username != "" {
 		c.JSON(http.StatusConflict, types.Response{
 			Status:     false,
 			StatusCode: http.StatusConflict,
 			Message:    "User already exists",
 			Data:       []any{},
 		})
-		return
+		return true
 	}
 
-	c.JSON(http.StatusCreated, types.Response{
-		Status:     true,
-		StatusCode: http.StatusCreated,
-		Message:    "User created successfully",
-		Data: []any{map[string]any{
-			"user": obj,
-		}},
-	})
-
+	if check.Email != "" {
+		c.JSON(http.StatusConflict, types.Response{
+			Status:     false,
+			StatusCode: http.StatusConflict,
+			Message:    "User already exists",
+			Data:       []any{},
+		})
+		return true
+	}
+	return false
 }
 
 func loginValidation(c *gin.Context, register types.Login) bool {

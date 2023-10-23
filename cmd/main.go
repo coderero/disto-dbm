@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"coderero.dev/projects/go/gin/hello/internals/router"
-	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
@@ -31,7 +30,7 @@ func init() {
 
 	//Function to get the port and mode from the environment variables
 	func() {
-		gin.SetMode(os.Getenv("MODE"))
+		// gin.SetMode(os.Getenv("GIN_MODE"))
 		port = os.Getenv("PORT")
 		if port == "" {
 			port = "8000"
@@ -46,5 +45,5 @@ func main() {
 	r := router.Router()
 
 	// The following code starts the server on port 8000.
-	r.Run(":" + port)
+	r.Run()
 }

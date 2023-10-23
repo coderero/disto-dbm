@@ -21,7 +21,7 @@ type User struct {
 	Age       int            `json:"age,omitempty" gorm:"not null"`
 	CreatedAt time.Time      `json:"-"`
 	UpdatedAt time.Time      `json:"-"`
-	DeletedAt gorm.DeletedAt `gorm:"index"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 }
 
 // The above code defines a User struct and provides methods for creating, retrieving, updating, and
@@ -38,9 +38,9 @@ func init() {
 	db.AutoMigrate(&User{})
 }
 
-func (u *User) Create() (*User, error) {
-	err := db.Model(&u).Create(&u)
-	return u, err.Error
+func (u *User) Create() *User {
+	db.Model(&u).Create(&u)
+	return u
 }
 
 func (u *User) GetUserById(id int) *User {
