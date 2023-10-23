@@ -1,8 +1,8 @@
 bin/*
 !bin/*.txt
 
-certs/jwt/*
-!certs/jwt/*.txt
+certs/*
+!certs/*.txt
 
 .env
 *.db
