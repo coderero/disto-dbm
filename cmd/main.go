@@ -18,6 +18,7 @@ var port string
 func init() {
 	godotenv.Load()
 
+	// Fuction to check for rsa key pair files in ./certs
 	func() {
 		files, err := os.ReadDir("./certs")
 		if err != nil {
@@ -29,6 +30,7 @@ func init() {
 		}
 	}()
 
+	//Function to get the port and mode from the environment variables
 	func() {
 		gin.SetMode(os.Getenv("MODE"))
 		port = os.Getenv("PORT")
