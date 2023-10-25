@@ -35,11 +35,24 @@ func checkForId(id int) (bool, error) {
 
 func init() {
 	db = sql.GetDB()
-	db.AutoMigrate(&User{})
 }
 
 func (u *User) Create() *User {
 	db.Model(&u).Create(&u)
+	return u
+}
+
+func (u User) CheckForUser(username string, email string) bool {
+	var check User
+	db.Model(&u).Where("username = ? OR email = ?", username, email).First(&check)
+	if check.ID != 0 {
+		return true
+	}
+	return false
+}
+
+func (u *User) GetUserForLogin(username, email, password string) *User {
+	db.Model(&u).Where("username = ? OR email = ?", username, email).First(&u)
 	return u
 }
 

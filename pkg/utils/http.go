@@ -13,7 +13,7 @@ func CheckContentType(ctx *gin.Context, t string) bool {
 			Status:     false,
 			StatusCode: http.StatusUnprocessableEntity,
 			Message:    "The request body must be of type 'application/x-www-form-urlencoded'",
-			Data:       []any{},
+			Data:       nil,
 		})
 		return true
 	}

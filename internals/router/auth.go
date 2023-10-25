@@ -11,5 +11,6 @@ func authRouter(group *gin.RouterGroup) {
 
 	{
 		group.POST("/signup", auth.SignUp)
+		group.POST("/login", auth.Login)
 	}
 }

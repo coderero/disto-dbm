@@ -3,8 +3,11 @@ package main
 import (
 	"os"
 
+	"coderero.dev/projects/go/gin/hello/db"
 	"coderero.dev/projects/go/gin/hello/internals/router"
+	"coderero.dev/projects/go/gin/hello/models"
 	"coderero.dev/projects/go/gin/hello/pkg/utils"
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
@@ -37,14 +40,22 @@ func init() {
 			port = "8000"
 		}
 	}()
+
+	// Function migrates the tables to the database
+	func() {
+		db := db.GetDB()
+		db.AutoMigrate(&models.User{})
+	}()
 }
 
 // The main function sets the mode for the Gin framework and starts the server on port 8000.
 func main() {
+	gin.SetMode(os.Getenv("GIN_MODE"))
+
 	// The code `r := router.Router()` creates a new instance of a Gin router. The `Router()` function is a
 	// custom function defined in the `router` package that returns a new Gin router.
 	r := router.Router()
 
 	// The following code starts the server on port 8000.
-	r.Run()
+	r.Run(":" + port)
 }

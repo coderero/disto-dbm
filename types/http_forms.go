@@ -11,6 +11,6 @@ type SignUp struct {
 
 type Login struct {
 	Username string `json:"username" form:"username" binding:"min=4,max=32"`
-	Email    string `json:"email" form:"email" binding:"email"`
+	Email    string `json:"email" form:"email"`
 	Password string `json:"password" form:"password" binding:"required,min=8,max=32"`
 }
