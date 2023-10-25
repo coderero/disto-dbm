@@ -3,9 +3,7 @@ package main
 import (
 	"os"
 
-	"coderero.dev/projects/go/gin/hello/db"
 	"coderero.dev/projects/go/gin/hello/internals/router"
-	"coderero.dev/projects/go/gin/hello/models"
 	"coderero.dev/projects/go/gin/hello/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -41,11 +39,6 @@ func init() {
 		}
 	}()
 
-	// Function migrates the tables to the database
-	func() {
-		db := db.GetDB()
-		db.AutoMigrate(&models.User{})
-	}()
 }
 
 // The main function sets the mode for the Gin framework and starts the server on port 8000.

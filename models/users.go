@@ -35,6 +35,7 @@ func checkForId(id int) (bool, error) {
 
 func init() {
 	db = sql.GetDB()
+	db.AutoMigrate(&User{})
 }
 
 func (u *User) Create() *User {
