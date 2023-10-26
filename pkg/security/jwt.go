@@ -48,5 +48,10 @@ func GenerateToken(sub string, exp time.Time) string {
 		panic(err)
 	}
 	return signedToken
+}
 
+func VerifyToken(token string) (*jwt.Token, error) {
+	return jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+		return publicKey, nil
+	})
 }

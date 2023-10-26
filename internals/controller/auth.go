@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	jwtcache "coderero.dev/projects/go/gin/hello/cache/jwt_cache"
 	"coderero.dev/projects/go/gin/hello/models"
 	"coderero.dev/projects/go/gin/hello/pkg/security"
 	"coderero.dev/projects/go/gin/hello/pkg/utils"
@@ -15,6 +16,8 @@ import (
 
 type AuthController struct{}
 
+var gal = galidator.New()
+
 // The GetUsers function returns a JSON response with a success message and an empty array of details.
 func (*AuthController) SignUp(c *gin.Context) {
 	// Create a new Register struct
@@ -23,8 +26,6 @@ func (*AuthController) SignUp(c *gin.Context) {
 	if utils.CheckContentType(c, types.Application_x_www_form) {
 		return
 	}
-
-	gal := galidator.New()
 	customizer := gal.Validator(signup, galidator.Messages{
 		"required": "$field is required",
 		"email":    "$field must be a valid email address",
@@ -67,7 +68,13 @@ func (*AuthController) SignUp(c *gin.Context) {
 	}
 
 	registeredObj := user.Create()
-	SetAuthCookies(registeredObj, c)
+
+	haveQueryParam := getTokenInbody(registeredObj, c)
+	if haveQueryParam {
+		return
+	}
+
+	setAuthCookies(registeredObj, c)
 
 	c.JSON(http.StatusCreated, types.Response{
 		Status:     true,
@@ -130,6 +137,10 @@ func (*AuthController) Login(c *gin.Context) {
 		return
 	}
 
+	haveQueryParam := getTokenInbody(registeredObj, c)
+	if haveQueryParam {
+		return
+	}
 	accessToken, refreshToken := generateAuthTokes(registeredObj)
 
 	c.SetCookie("access_token", accessToken, 300, "/", "localhost", false, true)
@@ -143,7 +154,126 @@ func (*AuthController) Login(c *gin.Context) {
 	})
 }
 
-func SetAuthCookies(registeredObj *models.User, c *gin.Context) {
+func (*AuthController) Logout(c *gin.Context) {
+	var refreshToken string
+	var accessToken string
+	_, token := c.GetQuery("token")
+	if token {
+		accessToken = c.Request.Header.Get("Authorization")
+		refreshToken = c.Query("refresh_token")
+
+		if accessToken == "" && refreshToken == "" {
+			c.JSON(http.StatusBadRequest, types.Response{
+				Status:     false,
+				StatusCode: http.StatusBadRequest,
+				Message:    "Refresh Token and Access Token is required",
+				Data:       map[string]any{},
+			})
+			return
+		}
+
+		revoked := tokenRevoked(accessToken, refreshToken, c)
+		if revoked {
+			return
+		}
+
+		revoke(accessToken, refreshToken)
+
+		c.JSON(http.StatusOK, types.Response{
+			Status:     true,
+			StatusCode: http.StatusOK,
+			Message:    "Logout Successful",
+			Data:       map[string]any{},
+		})
+		return
+
+	}
+	access, err := c.Request.Cookie("access_token")
+	refresh, err1 := c.Request.Cookie("refresh_token")
+	if err != nil && err1 != nil {
+		c.JSON(http.StatusBadRequest, types.Response{
+			Status:     false,
+			StatusCode: http.StatusBadRequest,
+			Message:    "No Cookie found",
+			Data:       map[string]any{},
+		})
+		return
+	}
+
+	accessToken = access.Value
+	refreshToken = refresh.Value
+
+	revoked := tokenRevoked(accessToken, refreshToken, c)
+	if revoked {
+		return
+	}
+
+	revoke(accessToken, refreshToken)
+
+	c.JSON(http.StatusOK, types.Response{
+		Status:     true,
+		StatusCode: http.StatusOK,
+		Message:    "Logout Successful",
+		Data:       map[string]any{},
+	})
+}
+
+func (*AuthController) RefreshToken(c *gin.Context) {
+	var tokens *types.RefreshToken
+
+	customizer := gal.Validator(tokens, galidator.Messages{
+		"required": "$field is required",
+	})
+
+	if err := c.ShouldBindJSON(&tokens); err != nil {
+		c.JSON(http.StatusBadRequest, types.Response{
+			Status:     false,
+			StatusCode: http.StatusBadRequest,
+			Message:    "Fields are required",
+			Data: map[string]any{
+				"error": customizer.DecryptErrors(err),
+			}})
+		return
+	}
+
+	refreshToken, accessToken := tokens.RefreshToken, tokens.AccessToken
+
+	revoked := tokenRevoked(accessToken, refreshToken, c)
+	if revoked {
+		return
+	}
+
+	jwtcache.RevokedToken(accessToken)
+
+	claims, err := security.VerifyToken(refreshToken)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, types.Response{
+			Status:     false,
+			StatusCode: http.StatusUnauthorized,
+			Message:    "Unauthorized",
+			Data:       map[string]any{},
+		})
+		return
+	}
+	sub, _ := claims.Claims.GetSubject()
+	accessToken = security.GenerateToken(sub, time.Now().Add(time.Minute*5))
+
+	c.JSON(http.StatusOK, types.Response{
+		Status:     true,
+		StatusCode: http.StatusOK,
+		Message:    "Token Refreshed",
+		Data: map[string]any{
+			"access_token": accessToken,
+		},
+	})
+}
+
+func revoke(accessToken string, refreshToken string) {
+	jwtcache.RevokedToken(accessToken)
+	jwtcache.RevokedToken(refreshToken)
+}
+
+func setAuthCookies(registeredObj *models.User, c *gin.Context) {
 	accessToken, refreshToken := generateAuthTokes(registeredObj)
 
 	c.SetCookie("access_token", accessToken, 300, "/", "localhost", false, true)
@@ -180,5 +310,35 @@ func loginValidation(c *gin.Context, register types.Login) bool {
 		return true
 	}
 
+	return false
+}
+
+func getTokenInbody(registeredObj *models.User, c *gin.Context) bool {
+	access, refresh := generateAuthTokes(registeredObj)
+	_, present := c.GetQuery("token")
+	if present {
+		c.JSON(http.StatusCreated, types.Response{
+			Status:     true,
+			StatusCode: http.StatusCreated,
+			Message:    "Registration Successful",
+			Data: map[string]any{
+				"access_token":  access,
+				"refresh_token": refresh,
+			}})
+		return true
+	}
+	return false
+}
+
+func tokenRevoked(accessToken string, refreshToken string, c *gin.Context) bool {
+	if jwtcache.IsTokenRevoked(accessToken) && jwtcache.IsTokenRevoked(refreshToken) {
+		c.JSON(http.StatusUnauthorized, types.Response{
+			Status:     false,
+			StatusCode: http.StatusUnauthorized,
+			Message:    "Token's Have been Revoked",
+			Data:       map[string]any{},
+		})
+		return true
+	}
 	return false
 }
