@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	jwtcache "coderero.dev/projects/go/gin/hello/cache/jwt_cache"
@@ -18,9 +19,10 @@ type AuthController struct{}
 
 var gal = galidator.New()
 
-// The GetUsers function returns a JSON response with a success message and an empty array of details.
+// The `SignUp` function is a method of the `AuthController` struct. It handles the registration
+// process for a user.
 func (*AuthController) SignUp(c *gin.Context) {
-	// Create a new Register struct
+	// The code snippet is handling the registration process for a user.
 	var signup types.SignUp
 
 	if utils.CheckContentType(c, types.Application_x_www_form) {
@@ -69,22 +71,30 @@ func (*AuthController) SignUp(c *gin.Context) {
 
 	registeredObj := user.Create()
 
-	haveQueryParam := getTokenInbody(registeredObj, c)
-	if haveQueryParam {
-		return
-	}
+	// The code snippet is generating access and refresh tokens for the registered user and setting them as
+	// cookies in the response. It then returns a JSON response with the status, status code, message, and
+	// the generated access and refresh tokens. This is typically done after a successful registration
+	// process to provide the user with authentication tokens for subsequent requests.
+	accessToken, refreshToken := security.GenerateAuthTokens(registeredObj)
 
-	setAuthCookies(registeredObj, c)
+	c.SetCookie("access_token", accessToken, 300, "/", "localhost", false, true)
+	c.SetCookie("refresh_token", refreshToken, 86400, "/", "localhost", false, true)
 
 	c.JSON(http.StatusCreated, types.Response{
 		Status:     true,
 		StatusCode: http.StatusCreated,
 		Message:    "Registration Successful",
-		Data:       map[string]any{},
+		Data: map[string]any{
+			"access_token":  accessToken,
+			"refresh_token": refreshToken,
+		},
 	})
 }
 
-func (*AuthController) Login(c *gin.Context) {
+// The `Signin` function is a method of the `AuthController` struct. It handles the login process for a
+// user.
+func (*AuthController) Signin(c *gin.Context) {
+	// The code snippet is handling the login process for a user.
 	var login types.Login
 	if utils.CheckContentType(c, types.Application_x_www_form) {
 		return
@@ -137,11 +147,11 @@ func (*AuthController) Login(c *gin.Context) {
 		return
 	}
 
-	haveQueryParam := getTokenInbody(registeredObj, c)
-	if haveQueryParam {
-		return
-	}
-	accessToken, refreshToken := generateAuthTokes(registeredObj)
+	// This code snippet is generating access and refresh tokens for a registered user and setting them as
+	// cookies in the response. It then returns a JSON response with the status, status code, message, and
+	// the generated access and refresh tokens. This is typically done after a successful login process to
+	// provide the user with authentication tokens for subsequent requests.
+	accessToken, refreshToken := security.GenerateAuthTokens(registeredObj)
 
 	c.SetCookie("access_token", accessToken, 300, "/", "localhost", false, true)
 	c.SetCookie("refresh_token", refreshToken, 86400, "/", "localhost", false, true)
@@ -150,44 +160,55 @@ func (*AuthController) Login(c *gin.Context) {
 		Status:     true,
 		StatusCode: http.StatusOK,
 		Message:    "Login Successful",
-		Data:       map[string]any{},
+		Data: map[string]any{
+			"access_token":  accessToken,
+			"refresh_token": refreshToken,
+		},
 	})
 }
 
+// The `Logout` function is a method of the `AuthController` struct. It handles the logout process for
+// a user.
 func (*AuthController) Logout(c *gin.Context) {
-	var refreshToken string
-	var accessToken string
-	_, token := c.GetQuery("token")
-	if token {
-		accessToken = c.Request.Header.Get("Authorization")
-		refreshToken = c.Query("refresh_token")
+	func() {
+		// The code snippet is checking for the presence of an access token in the request header. It
+		// retrieves the access token from the "Authorization" header by splitting the header value and
+		// taking the second part.
+		var accessToken, refreshToken string
+		token := c.Request.Header.Get("Authorization")
+		accessToken = strings.Split(token, " ")[1]
+		if accessToken == "" {
 
-		if accessToken == "" && refreshToken == "" {
-			c.JSON(http.StatusBadRequest, types.Response{
-				Status:     false,
-				StatusCode: http.StatusBadRequest,
-				Message:    "Refresh Token and Access Token is required",
+			if accessToken == "" || refreshToken == "" {
+				c.JSON(http.StatusBadRequest, types.Response{
+					Status:     false,
+					StatusCode: http.StatusBadRequest,
+					Message:    "Refresh Token and Access Token is required",
+					Data:       map[string]any{},
+				})
+				return
+			}
+
+			revoked := security.TokenRevoked(accessToken, refreshToken, c, false)
+			if revoked {
+				return
+			}
+
+			revoke(accessToken, refreshToken)
+
+			c.JSON(http.StatusOK, types.Response{
+				Status:     true,
+				StatusCode: http.StatusOK,
+				Message:    "Logout Successful",
 				Data:       map[string]any{},
 			})
 			return
 		}
+	}()
 
-		revoked := tokenRevoked(accessToken, refreshToken, c)
-		if revoked {
-			return
-		}
-
-		revoke(accessToken, refreshToken)
-
-		c.JSON(http.StatusOK, types.Response{
-			Status:     true,
-			StatusCode: http.StatusOK,
-			Message:    "Logout Successful",
-			Data:       map[string]any{},
-		})
-		return
-
-	}
+	// This code snippet is handling the logout process for a user. It first tries to retrieve the access
+	// token and refresh token from the request cookies. If both cookies are not found, it returns a JSON
+	// response with a status code of 400 and a message indicating that no cookies were found.
 	access, err := c.Request.Cookie("access_token")
 	refresh, err1 := c.Request.Cookie("refresh_token")
 	if err != nil && err1 != nil {
@@ -200,10 +221,10 @@ func (*AuthController) Logout(c *gin.Context) {
 		return
 	}
 
-	accessToken = access.Value
-	refreshToken = refresh.Value
+	accessToken := access.Value
+	refreshToken := refresh.Value
 
-	revoked := tokenRevoked(accessToken, refreshToken, c)
+	revoked := security.TokenRevoked(accessToken, "", c, false)
 	if revoked {
 		return
 	}
@@ -218,6 +239,8 @@ func (*AuthController) Logout(c *gin.Context) {
 	})
 }
 
+// The `RefreshToken` function is a method of the `AuthController` struct. It handles the process of
+// refreshing an access token using a refresh token.
 func (*AuthController) RefreshToken(c *gin.Context) {
 	var tokens *types.RefreshToken
 
@@ -238,12 +261,24 @@ func (*AuthController) RefreshToken(c *gin.Context) {
 
 	refreshToken, accessToken := tokens.RefreshToken, tokens.AccessToken
 
-	revoked := tokenRevoked(accessToken, refreshToken, c)
+	revoked := security.TokenRevoked(accessToken, refreshToken, c, true)
 	if revoked {
 		return
 	}
 
 	jwtcache.RevokedToken(accessToken)
+
+	if security.IsTokenExpired(refreshToken) {
+		c.JSON(http.StatusBadRequest, types.Response{
+			Status:     false,
+			StatusCode: http.StatusBadRequest,
+			Message:    "Unauthorized",
+			Data: map[string]any{
+				"error": "Refresh Token Expired",
+			},
+		})
+		return
+	}
 
 	claims, err := security.VerifyToken(refreshToken)
 	if err != nil {
@@ -268,26 +303,15 @@ func (*AuthController) RefreshToken(c *gin.Context) {
 	})
 }
 
+// The function "revoke" revokes the access token and refresh token by adding them to the revoked token
+// cache.
 func revoke(accessToken string, refreshToken string) {
 	jwtcache.RevokedToken(accessToken)
 	jwtcache.RevokedToken(refreshToken)
 }
 
-func setAuthCookies(registeredObj *models.User, c *gin.Context) {
-	accessToken, refreshToken := generateAuthTokes(registeredObj)
-
-	c.SetCookie("access_token", accessToken, 300, "/", "localhost", false, true)
-	c.SetCookie("refresh_token", refreshToken, 86400, "/", "localhost", false, true)
-}
-
-func generateAuthTokes(obj *models.User) (string, string) {
-	sub := obj.Email
-	currentTime := time.Now()
-	accessToken := security.GenerateToken(sub, currentTime.Add(time.Minute*5))
-	refreshToken := security.GenerateToken(sub, currentTime.Add(time.Hour*24))
-	return accessToken, refreshToken
-}
-
+// The loginValidation function checks if the required fields for login are provided and returns true
+// if there are any errors.
 func loginValidation(c *gin.Context, register types.Login) bool {
 	if register.Email != "" && register.Username != "" {
 		c.JSON(http.StatusUnprocessableEntity, types.Response{
@@ -310,35 +334,5 @@ func loginValidation(c *gin.Context, register types.Login) bool {
 		return true
 	}
 
-	return false
-}
-
-func getTokenInbody(registeredObj *models.User, c *gin.Context) bool {
-	access, refresh := generateAuthTokes(registeredObj)
-	_, present := c.GetQuery("token")
-	if present {
-		c.JSON(http.StatusCreated, types.Response{
-			Status:     true,
-			StatusCode: http.StatusCreated,
-			Message:    "Registration Successful",
-			Data: map[string]any{
-				"access_token":  access,
-				"refresh_token": refresh,
-			}})
-		return true
-	}
-	return false
-}
-
-func tokenRevoked(accessToken string, refreshToken string, c *gin.Context) bool {
-	if jwtcache.IsTokenRevoked(accessToken) && jwtcache.IsTokenRevoked(refreshToken) {
-		c.JSON(http.StatusUnauthorized, types.Response{
-			Status:     false,
-			StatusCode: http.StatusUnauthorized,
-			Message:    "Token's Have been Revoked",
-			Data:       map[string]any{},
-		})
-		return true
-	}
 	return false
 }
