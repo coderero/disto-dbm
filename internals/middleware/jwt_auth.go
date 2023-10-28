@@ -36,6 +36,11 @@ func JWTAuthMiddleWare() gin.HandlerFunc {
 				return
 			}
 			// Verify the token
+			if security.TokenRevoked(typeOfToken[1], "", c, false) {
+				InvalidToken(c)
+				return
+			}
+
 			jwtToken, err := security.VerifyToken(typeOfToken[1])
 
 			if err != nil {
@@ -52,11 +57,20 @@ func JWTAuthMiddleWare() gin.HandlerFunc {
 		}
 
 		// If the token is empty, check if the cookie is present
-		accessToken, _ := c.Request.Cookie("access_token")
-		refreshToken, _ := c.Request.Cookie("refresh_token")
+		var accessToken string
+		var refreshToken string
+
+		raw_accessToken, _ := c.Request.Cookie("access_token")
+		raw_refreshToken, _ := c.Request.Cookie("refresh_token")
+		if raw_accessToken != nil {
+			accessToken = raw_accessToken.Value
+		}
+		if raw_refreshToken != nil {
+			refreshToken = raw_refreshToken.Value
+		}
 
 		// Check if the cookie is present
-		if accessToken == nil && refreshToken == nil {
+		if accessToken == "" && refreshToken == "" {
 			c.JSON(http.StatusUnauthorized, types.Response{
 				Status:     false,
 				StatusCode: http.StatusUnauthorized,
@@ -70,25 +84,34 @@ func JWTAuthMiddleWare() gin.HandlerFunc {
 		}
 
 		// Check if the token is revoked
-		revoked := security.TokenRevoked(accessToken.Value, refreshToken.Value, c, true)
-		if revoked {
+		haveErr := checkTokenRevoketion(accessToken, refreshToken, c)
+		if haveErr {
+			c.JSON(http.StatusUnauthorized, types.Response{
+				Status:     false,
+				StatusCode: http.StatusUnauthorized,
+				Message:    "Unauthorized",
+				Data: map[string]any{
+					"error": "Token's have been revoked.",
+				},
+			})
+			c.Abort()
 			return
 		}
 
 		// Check if the token is expired
-		if !security.IsTokenExpired(accessToken.Value) {
+		if !security.IsTokenExpired(accessToken) {
 			c.Next()
 		}
 
 		// If the access token is expired but the refresh token is not expired, generate a new access token and set it as a cookie
-		if security.IsTokenExpired(accessToken.Value) && !security.IsTokenExpired(refreshToken.Value) {
-			newAccessToken := security.GenerateToken(accessToken.Value, security.AcessTokenExpireTime)
+		if security.IsTokenExpired(accessToken) && !security.IsTokenExpired(refreshToken) {
+			newAccessToken := security.GenerateToken(accessToken, security.AcessTokenExpireTime)
 			c.SetCookie("access_token", newAccessToken, 3600, "/", "localhost", false, true)
 			c.Next()
 		}
 
 		// If both the access token and refresh token are expired, return an error
-		if security.IsTokenExpired(accessToken.Value) && security.IsTokenExpired(refreshToken.Value) {
+		if security.IsTokenExpired(accessToken) && security.IsTokenExpired(refreshToken) {
 			c.JSON(http.StatusUnauthorized, types.Response{
 				Status:     false,
 				StatusCode: http.StatusUnauthorized,
@@ -103,6 +126,22 @@ func JWTAuthMiddleWare() gin.HandlerFunc {
 
 	}
 
+}
+
+func checkTokenRevoketion(accessToken string, refreshToken string, c *gin.Context) bool {
+	if accessToken != "" && refreshToken != "" {
+		revoked := security.TokenRevoked(accessToken, refreshToken, c, true)
+		if revoked {
+			return true
+		}
+	}
+	if refreshToken != "" && accessToken == "" {
+		revoked := security.TokenRevoked("", refreshToken, c, false)
+		if revoked {
+			return true
+		}
+	}
+	return false
 }
 
 // The InvalidToken function returns a JSON response indicating that the token is invalid and aborts

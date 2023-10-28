@@ -87,7 +87,7 @@ func VerifyToken(token string) (*jwt.Token, error) {
 func IsTokenExpired(token string) bool {
 	jwtToken, err := VerifyToken(token)
 	if err != nil {
-		panic(err)
+		return true
 	}
 	if jwtToken.Valid {
 		return false

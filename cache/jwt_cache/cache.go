@@ -2,6 +2,7 @@ package jwtcache
 
 import (
 	"context"
+	"fmt"
 
 	"coderero.dev/projects/go/gin/hello/cache"
 )
@@ -13,8 +14,9 @@ import (
 var jwt_cache = cache.GetClient()
 
 // The function RevokedToken adds a token to a list of revoked tokens in a cache.
-func RevokedToken(token string) {
-	jwt_cache.LPush(context.Background(), "revoked_tokens", token)
+func RevokeToken(token string) {
+	err := jwt_cache.RPush(context.Background(), "revoked_tokens", token).Err()
+	fmt.Println(err)
 }
 
 // The IsTokenRevoked function checks if a given token is revoked by querying a cache.

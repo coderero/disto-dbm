@@ -24,9 +24,10 @@ func Router() *gin.Engine {
 
 	// Sub-Routers
 	sub := r.Group("/api/v1")
-	sub.Use(middleware.JWTAuthMiddleWare())
+
 	// Route Handlers
 	authRouter(sub)
+	appRouter(sub)
 
 	return r
 }

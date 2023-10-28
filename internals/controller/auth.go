@@ -21,7 +21,7 @@ var gal = galidator.New()
 
 // The `SignUp` function is a method of the `AuthController` struct. It handles the registration
 // process for a user.
-func (*AuthController) SignUp(c *gin.Context) {
+func (*AuthController) Register(c *gin.Context) {
 	// The code snippet is handling the registration process for a user.
 	var signup types.SignUp
 
@@ -93,12 +93,23 @@ func (*AuthController) SignUp(c *gin.Context) {
 
 // The `Signin` function is a method of the `AuthController` struct. It handles the login process for a
 // user.
-func (*AuthController) Signin(c *gin.Context) {
+func (*AuthController) Login(c *gin.Context) {
 	// The code snippet is handling the login process for a user.
 	var login types.Login
 	if utils.CheckContentType(c, types.Application_x_www_form) {
 		return
 	}
+
+	// The code snippet is retrieving the access token and refresh token from the request header and
+	// cookies.
+	token := c.Request.Header.Get("Authorization")
+	raw_accessToken, _ := c.Request.Cookie("access_token")
+	raw_refreshToken, _ := c.Request.Cookie("refresh_token")
+
+	// The `revokeTokenIfPresent` function is used to check if an access token and refresh token are
+	// present in the request. It takes in the access token, raw access token cookie, raw refresh token
+	// cookie, and the current Gin context as parameters.
+	revokeTokenIfPresent(token, raw_accessToken, raw_refreshToken, c)
 
 	gal := galidator.New()
 	customizer := gal.Validator(login, galidator.Messages{
@@ -178,7 +189,6 @@ func (*AuthController) Logout(c *gin.Context) {
 		token := c.Request.Header.Get("Authorization")
 		accessToken = strings.Split(token, " ")[1]
 		if accessToken == "" {
-
 			if accessToken == "" || refreshToken == "" {
 				c.JSON(http.StatusBadRequest, types.Response{
 					Status:     false,
@@ -266,7 +276,7 @@ func (*AuthController) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	jwtcache.RevokedToken(accessToken)
+	jwtcache.RevokeToken(accessToken)
 
 	if security.IsTokenExpired(refreshToken) {
 		c.JSON(http.StatusBadRequest, types.Response{
@@ -303,11 +313,44 @@ func (*AuthController) RefreshToken(c *gin.Context) {
 	})
 }
 
+func revokeTokenIfPresent(token string, raw_accessToken, raw_refreshToken *http.Cookie, c *gin.Context) {
+	var accessToken, refreshToken string
+	if token != "" {
+		accessToken = strings.Split(token, " ")[1]
+	}
+	if raw_accessToken != nil {
+		accessToken = raw_accessToken.Value
+	}
+	if raw_refreshToken != nil {
+		refreshToken = raw_refreshToken.Value
+	}
+	if accessToken != "" && refreshToken != "" {
+		revoked := (jwtcache.IsTokenRevoked(accessToken) && jwtcache.IsTokenRevoked(refreshToken)) || (security.IsTokenExpired(accessToken) && security.IsTokenExpired(refreshToken))
+		if revoked {
+			return
+		}
+	}
+	if accessToken != "" {
+		if jwtcache.IsTokenRevoked(accessToken) || security.IsTokenExpired(accessToken) {
+			return
+		}
+		jwtcache.RevokeToken(accessToken)
+
+	}
+	if refreshToken != "" {
+		if jwtcache.IsTokenRevoked(refreshToken) || security.IsTokenExpired(refreshToken) {
+			return
+		}
+		jwtcache.RevokeToken(refreshToken)
+	}
+
+}
+
 // The function "revoke" revokes the access token and refresh token by adding them to the revoked token
 // cache.
 func revoke(accessToken string, refreshToken string) {
-	jwtcache.RevokedToken(accessToken)
-	jwtcache.RevokedToken(refreshToken)
+	jwtcache.RevokeToken(accessToken)
+	jwtcache.RevokeToken(refreshToken)
 }
 
 // The loginValidation function checks if the required fields for login are provided and returns true
