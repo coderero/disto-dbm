@@ -28,6 +28,11 @@ func (*AuthController) Register(c *gin.Context) {
 	if utils.CheckContentType(c, types.Application_x_www_form) {
 		return
 	}
+
+	// The `previousTokens` function is used to check if the access token and refresh token are present in
+	// the request header or cookies. If they are present, they are revoked.
+	previousTokens(c)
+
 	customizer := gal.Validator(signup, galidator.Messages{
 		"required": "$field is required",
 		"email":    "$field must be a valid email address",
@@ -91,7 +96,7 @@ func (*AuthController) Register(c *gin.Context) {
 	})
 }
 
-// The `Signin` function is a method of the `AuthController` struct. It handles the login process for a
+// The `Login` function is a method of the `AuthController` struct. It handles the login process for a
 // user.
 func (*AuthController) Login(c *gin.Context) {
 	// The code snippet is handling the login process for a user.
@@ -100,16 +105,9 @@ func (*AuthController) Login(c *gin.Context) {
 		return
 	}
 
-	// The code snippet is retrieving the access token and refresh token from the request header and
-	// cookies.
-	token := c.Request.Header.Get("Authorization")
-	raw_accessToken, _ := c.Request.Cookie("access_token")
-	raw_refreshToken, _ := c.Request.Cookie("refresh_token")
-
-	// The `revokeTokenIfPresent` function is used to check if an access token and refresh token are
-	// present in the request. It takes in the access token, raw access token cookie, raw refresh token
-	// cookie, and the current Gin context as parameters.
-	revokeTokenIfPresent(token, raw_accessToken, raw_refreshToken, c)
+	// The `previousTokens` function is used to check if the access token and refresh token are present in
+	// the request header or cookies. If they are present, they are revoked.
+	previousTokens(c)
 
 	gal := galidator.New()
 	customizer := gal.Validator(login, galidator.Messages{
@@ -181,65 +179,33 @@ func (*AuthController) Login(c *gin.Context) {
 // The `Logout` function is a method of the `AuthController` struct. It handles the logout process for
 // a user.
 func (*AuthController) Logout(c *gin.Context) {
-	func() {
-		// The code snippet is checking for the presence of an access token in the request header. It
-		// retrieves the access token from the "Authorization" header by splitting the header value and
-		// taking the second part.
-		var accessToken, refreshToken string
-		token := c.Request.Header.Get("Authorization")
-		accessToken = strings.Split(token, " ")[1]
-		if accessToken == "" {
-			if accessToken == "" || refreshToken == "" {
-				c.JSON(http.StatusBadRequest, types.Response{
-					Status:     false,
-					StatusCode: http.StatusBadRequest,
-					Message:    "Refresh Token and Access Token is required",
-					Data:       map[string]any{},
-				})
-				return
-			}
+	// The code snippet is handling the logout process for a user.
+	token := c.Request.Header.Get("Authorization")
+	raw_accessToken, _ := c.Request.Cookie("access_token")
+	raw_refreshToken, _ := c.Request.Cookie("refresh_token")
 
-			revoked := security.TokenRevoked(accessToken, refreshToken, c, false)
-			if revoked {
-				return
-			}
-
-			revoke(accessToken, refreshToken)
-
-			c.JSON(http.StatusOK, types.Response{
-				Status:     true,
-				StatusCode: http.StatusOK,
-				Message:    "Logout Successful",
-				Data:       map[string]any{},
-			})
-			return
-		}
-	}()
-
-	// This code snippet is handling the logout process for a user. It first tries to retrieve the access
-	// token and refresh token from the request cookies. If both cookies are not found, it returns a JSON
-	// response with a status code of 400 and a message indicating that no cookies were found.
-	access, err := c.Request.Cookie("access_token")
-	refresh, err1 := c.Request.Cookie("refresh_token")
-	if err != nil && err1 != nil {
+	// Although the revokeTokenFunction below doing great job but add a extra validation check is good for
+	// more information for the user to avoid panicking or 500 error.
+	if token == "" && raw_accessToken == nil && raw_refreshToken == nil {
 		c.JSON(http.StatusBadRequest, types.Response{
 			Status:     false,
 			StatusCode: http.StatusBadRequest,
-			Message:    "No Cookie found",
-			Data:       map[string]any{},
-		})
+			Message:    "Bad Request",
+			Data: map[string]any{
+				"error": "No token provided (i.e. you are not logged in).",
+			}})
 		return
 	}
 
-	accessToken := access.Value
-	refreshToken := refresh.Value
+	// The `revokeTokenIfPresent` function is used to check if an access token and refresh token are
+	revokeTokenIfPresent(token, raw_accessToken, raw_refreshToken)
 
-	revoked := security.TokenRevoked(accessToken, "", c, false)
-	if revoked {
-		return
-	}
+	// The `revoke` function is used to revoke the access token and refresh token. It takes in the access
+	// token and refresh token as parameters.
 
-	revoke(accessToken, refreshToken)
+	// The code snippet is deleting the access token and refresh token cookies from the response.
+	c.SetCookie("access_token", "", -1, "/", "localhost", false, true)
+	c.SetCookie("refresh_token", "", -1, "/", "localhost", false, true)
 
 	c.JSON(http.StatusOK, types.Response{
 		Status:     true,
@@ -247,12 +213,17 @@ func (*AuthController) Logout(c *gin.Context) {
 		Message:    "Logout Successful",
 		Data:       map[string]any{},
 	})
+
 }
 
 // The `RefreshToken` function is a method of the `AuthController` struct. It handles the process of
 // refreshing an access token using a refresh token.
 func (*AuthController) RefreshToken(c *gin.Context) {
 	var tokens *types.RefreshToken
+
+	if utils.CheckContentType(c, types.Application_json) {
+		return
+	}
 
 	customizer := gal.Validator(tokens, galidator.Messages{
 		"required": "$field is required",
@@ -269,7 +240,7 @@ func (*AuthController) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	refreshToken, accessToken := tokens.RefreshToken, tokens.AccessToken
+	refreshToken, accessToken := tokens.RefreshToken, tokens.AcessToken
 
 	revoked := security.TokenRevoked(accessToken, refreshToken, c, true)
 	if revoked {
@@ -313,7 +284,53 @@ func (*AuthController) RefreshToken(c *gin.Context) {
 	})
 }
 
-func revokeTokenIfPresent(token string, raw_accessToken, raw_refreshToken *http.Cookie, c *gin.Context) {
+func (*AuthController) IsLoggedIn(c *gin.Context) {
+	token := c.Request.Header.Get("Authorization")
+	raw_accessToken, _ := c.Request.Cookie("access_token")
+	raw_refreshToken, _ := c.Request.Cookie("refresh_token")
+
+	if token == "" && raw_accessToken == nil && raw_refreshToken == nil {
+		c.JSON(http.StatusBadRequest, types.Response{
+			Status:     false,
+			StatusCode: http.StatusBadRequest,
+			Message:    "Bad Request",
+			Data: map[string]any{
+				"error": "No token provided (i.e. you are not logged in).",
+			}})
+		return
+	}
+
+	revokedOrExpired := (jwtcache.IsTokenRevoked(token) && jwtcache.IsTokenRevoked(raw_accessToken.Value) && jwtcache.IsTokenRevoked(raw_refreshToken.Value)) || (security.IsTokenExpired(token) && security.IsTokenExpired(raw_accessToken.Value) && security.IsTokenExpired(raw_refreshToken.Value))
+	if revokedOrExpired {
+		c.JSON(http.StatusBadRequest, types.Response{
+			Status:     false,
+			StatusCode: http.StatusBadRequest,
+			Message:    "Bad Request",
+			Data: map[string]any{
+				"error": "Token's have been revoked or expired.",
+			}})
+		return
+	}
+
+	c.JSON(http.StatusOK, types.Response{
+		Status:     true,
+		StatusCode: http.StatusOK,
+		Message:    "You are Logged in",
+		Data: map[string]any{
+			"details": true,
+		},
+	})
+}
+
+func previousTokens(c *gin.Context) {
+	token := c.Request.Header.Get("Authorization")
+	raw_accessToken, _ := c.Request.Cookie("access_token")
+	raw_refreshToken, _ := c.Request.Cookie("refresh_token")
+
+	revokeTokenIfPresent(token, raw_accessToken, raw_refreshToken)
+}
+
+func revokeTokenIfPresent(token string, raw_accessToken, raw_refreshToken *http.Cookie) {
 	var accessToken, refreshToken string
 	if token != "" {
 		accessToken = strings.Split(token, " ")[1]
@@ -350,7 +367,9 @@ func revokeTokenIfPresent(token string, raw_accessToken, raw_refreshToken *http.
 // cache.
 func revoke(accessToken string, refreshToken string) {
 	jwtcache.RevokeToken(accessToken)
-	jwtcache.RevokeToken(refreshToken)
+	if refreshToken != "" {
+		jwtcache.RevokeToken(refreshToken)
+	}
 }
 
 // The loginValidation function checks if the required fields for login are provided and returns true

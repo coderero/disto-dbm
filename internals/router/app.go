@@ -11,6 +11,6 @@ func appRouter(group *gin.RouterGroup) {
 	app := new(controller.AppController)
 
 	{
-		group.GET("", app.Home)
+		group.GET("/", app.Home)
 	}
 }

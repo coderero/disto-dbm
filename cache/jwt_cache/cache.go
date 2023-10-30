@@ -3,6 +3,7 @@ package jwtcache
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"coderero.dev/projects/go/gin/hello/cache"
 )
@@ -15,10 +16,11 @@ var jwt_cache = cache.GetClient()
 
 // The function RevokedToken adds a token to a list of revoked tokens in a cache.
 func RevokeToken(token string) {
-	err := jwt_cache.RPush(context.Background(), "revoked_tokens", token).Err()
+	err := jwt_cache.LPush(context.Background(), "revoked_tokens", token).Err()
 	if err != nil {
 		fmt.Println(err)
 	}
+	jwt_cache.Expire(context.Background(), "revoked_tokens", 7*24*60*60*time.Second)
 }
 
 // The IsTokenRevoked function checks if a given token is revoked by querying a cache.

@@ -95,6 +95,17 @@ func IsTokenExpired(token string) bool {
 	return true
 }
 
+func IsTokenValid(token string) bool {
+	jwtToken, err := VerifyToken(token)
+	if err != nil {
+		return false
+	}
+	if jwtToken.Valid {
+		return true
+	}
+	return false
+}
+
 // The function checks if a token has been revoked and returns a boolean value indicating whether the
 // token is revoked or not.
 func TokenRevoked(accessToken string, refreshToken string, c *gin.Context, refresh bool) bool {

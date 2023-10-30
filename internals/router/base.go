@@ -24,6 +24,7 @@ func Router() *gin.Engine {
 
 	// Sub-Routers
 	sub := r.Group("/api/v1")
+	sub.Use(middleware.CORSMiddleWare())
 
 	// Route Handlers
 	authRouter(sub)
