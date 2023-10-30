@@ -53,4 +53,5 @@ require (
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/postgres v1.5.3 // indirect
+	gorm.io/hints v1.1.2 // indirect
 )

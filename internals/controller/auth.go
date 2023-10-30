@@ -135,7 +135,7 @@ func (*AuthController) Login(c *gin.Context) {
 
 	var user *models.User
 
-	registeredObj := user.GetUserForLogin(login.Username, login.Email, login.Password)
+	registeredObj := user.GetUserForLogin(login.Username, login.Email)
 
 	// Check for password
 	if !security.ComparePassword(login.Password, registeredObj.Password) {

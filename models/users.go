@@ -52,8 +52,8 @@ func (u User) CheckForUser(username string, email string) bool {
 	return false
 }
 
-func (u *User) GetUserForLogin(username, email, password string) *User {
-	db.Model(&u).Where("username = ? OR email = ?", username, email).First(&u)
+func (u *User) GetUserForLogin(username, email string) *User {
+	db.Model(&u).Raw("SELECT * FROM users WHERE username = ? OR email = ?", username, email).First(&u)
 	return u
 }
 
