@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	jwtcache "coderero.dev/projects/go/gin/hello/cache/jwt_cache"
+	"coderero.dev/projects/go/gin/hello/cache"
 	"coderero.dev/projects/go/gin/hello/models"
 	"coderero.dev/projects/go/gin/hello/pkg/security"
 	"coderero.dev/projects/go/gin/hello/pkg/utils"
@@ -247,7 +247,7 @@ func (*AuthController) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	jwtcache.RevokeToken(accessToken)
+	cache.RevokeToken(accessToken)
 
 	if security.IsTokenExpired(refreshToken) {
 		c.JSON(http.StatusBadRequest, types.Response{
@@ -300,7 +300,7 @@ func (*AuthController) IsLoggedIn(c *gin.Context) {
 		return
 	}
 
-	revokedOrExpired := (jwtcache.IsTokenRevoked(token) && jwtcache.IsTokenRevoked(raw_accessToken.Value) && jwtcache.IsTokenRevoked(raw_refreshToken.Value)) || (security.IsTokenExpired(token) && security.IsTokenExpired(raw_accessToken.Value) && security.IsTokenExpired(raw_refreshToken.Value))
+	revokedOrExpired := (cache.IsTokenRevoked(token) && cache.IsTokenRevoked(raw_accessToken.Value) && cache.IsTokenRevoked(raw_refreshToken.Value)) || (security.IsTokenExpired(token) && security.IsTokenExpired(raw_accessToken.Value) && security.IsTokenExpired(raw_refreshToken.Value))
 	if revokedOrExpired {
 		c.JSON(http.StatusBadRequest, types.Response{
 			Status:     false,
@@ -342,23 +342,23 @@ func revokeTokenIfPresent(token string, raw_accessToken, raw_refreshToken *http.
 		refreshToken = raw_refreshToken.Value
 	}
 	if accessToken != "" && refreshToken != "" {
-		revoked := (jwtcache.IsTokenRevoked(accessToken) && jwtcache.IsTokenRevoked(refreshToken)) || (security.IsTokenExpired(accessToken) && security.IsTokenExpired(refreshToken))
+		revoked := (cache.IsTokenRevoked(accessToken) && cache.IsTokenRevoked(refreshToken)) || (security.IsTokenExpired(accessToken) && security.IsTokenExpired(refreshToken))
 		if revoked {
 			return
 		}
 	}
 	if accessToken != "" {
-		if jwtcache.IsTokenRevoked(accessToken) || security.IsTokenExpired(accessToken) {
+		if cache.IsTokenRevoked(accessToken) || security.IsTokenExpired(accessToken) {
 			return
 		}
-		jwtcache.RevokeToken(accessToken)
+		cache.RevokeToken(accessToken)
 
 	}
 	if refreshToken != "" {
-		if jwtcache.IsTokenRevoked(refreshToken) || security.IsTokenExpired(refreshToken) {
+		if cache.IsTokenRevoked(refreshToken) || security.IsTokenExpired(refreshToken) {
 			return
 		}
-		jwtcache.RevokeToken(refreshToken)
+		cache.RevokeToken(refreshToken)
 	}
 
 }
@@ -366,9 +366,9 @@ func revokeTokenIfPresent(token string, raw_accessToken, raw_refreshToken *http.
 // The function "revoke" revokes the access token and refresh token by adding them to the revoked token
 // cache.
 func revoke(accessToken string, refreshToken string) {
-	jwtcache.RevokeToken(accessToken)
+	cache.RevokeToken(accessToken)
 	if refreshToken != "" {
-		jwtcache.RevokeToken(refreshToken)
+		cache.RevokeToken(refreshToken)
 	}
 }
 

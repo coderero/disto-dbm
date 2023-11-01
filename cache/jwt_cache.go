@@ -1,18 +1,16 @@
-package jwtcache
+package cache
 
 import (
 	"context"
 	"fmt"
 	"time"
-
-	"coderero.dev/projects/go/gin/hello/cache"
 )
 
 // The line `var jwt_cache = cache.GetClient()` is initializing a variable `jwt_cache` with the value
 // returned by the `GetClient()` function from the `cache` package. This line is likely setting up a
 // connection to a cache server or creating a cache client object that will be used for storing and
 // retrieving data from the cache.
-var jwt_cache = cache.GetClient()
+var jwt_cache = getClient()
 
 // The function RevokedToken adds a token to a list of revoked tokens in a cache.
 func RevokeToken(token string) {

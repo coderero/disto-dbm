@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	jwtcache "coderero.dev/projects/go/gin/hello/cache/jwt_cache"
+	"coderero.dev/projects/go/gin/hello/cache"
 	"coderero.dev/projects/go/gin/hello/types"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -110,7 +110,7 @@ func IsTokenValid(token string) bool {
 // token is revoked or not.
 func TokenRevoked(accessToken string, refreshToken string, c *gin.Context, refresh bool) bool {
 	if refresh {
-		if jwtcache.IsTokenRevoked(refreshToken) || jwtcache.IsTokenRevoked(accessToken) {
+		if cache.IsTokenRevoked(refreshToken) || cache.IsTokenRevoked(accessToken) {
 			c.JSON(http.StatusUnauthorized, types.Response{
 				Status:     false,
 				StatusCode: http.StatusUnauthorized,
@@ -121,7 +121,7 @@ func TokenRevoked(accessToken string, refreshToken string, c *gin.Context, refre
 		}
 	}
 
-	if jwtcache.IsTokenRevoked(accessToken) {
+	if cache.IsTokenRevoked(accessToken) {
 		c.JSON(http.StatusUnauthorized, types.Response{
 			Status:     false,
 			StatusCode: http.StatusUnauthorized,
