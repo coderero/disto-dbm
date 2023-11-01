@@ -60,8 +60,8 @@ func JWTAuthMiddleWare() gin.HandlerFunc {
 		var accessToken string
 		var refreshToken string
 
-		raw_accessToken, _ := c.Request.Cookie("access_token")
-		raw_refreshToken, _ := c.Request.Cookie("refresh_token")
+		raw_accessToken, _ := c.Request.Cookie("__t")
+		raw_refreshToken, _ := c.Request.Cookie("__rt")
 		if raw_accessToken != nil {
 			accessToken = raw_accessToken.Value
 		}
@@ -106,7 +106,7 @@ func JWTAuthMiddleWare() gin.HandlerFunc {
 		// If the access token is expired but the refresh token is not expired, generate a new access token and set it as a cookie
 		if security.IsTokenExpired(accessToken) && !security.IsTokenExpired(refreshToken) {
 			newAccessToken := security.GenerateToken(accessToken, security.AcessTokenExpireTime)
-			c.SetCookie("access_token", newAccessToken, 3600, "/", "localhost", false, true)
+			c.SetCookie("__t", newAccessToken, 3600, "/", "localhost", false, true)
 			c.Next()
 		}
 
@@ -128,6 +128,8 @@ func JWTAuthMiddleWare() gin.HandlerFunc {
 
 }
 
+// The function checks if a token has been revoked based on the provided access token and refresh
+// token.
 func checkTokenRevoketion(accessToken string, refreshToken string, c *gin.Context) bool {
 	if accessToken != "" && refreshToken != "" {
 		revoked := security.TokenRevoked(accessToken, refreshToken, c, true)

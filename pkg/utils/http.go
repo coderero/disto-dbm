@@ -16,7 +16,6 @@ func CheckContentType(ctx *gin.Context, t string) bool {
 			Status:     false,
 			StatusCode: http.StatusUnprocessableEntity,
 			Message:    fmt.Sprintf("The request body must be of type '%s'", t),
-			Data:       map[string]any{},
 		})
 		return true
 	}

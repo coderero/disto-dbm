@@ -15,7 +15,6 @@ func NoMethodHandler() gin.HandlerFunc {
 			Status:     false,
 			StatusCode: http.StatusMethodNotAllowed,
 			Message:    "The requested method is not allowed",
-			Data:       map[string]any{},
 		})
 		c.Next()
 	}
@@ -30,7 +29,6 @@ func NoRouteHandler() gin.HandlerFunc {
 			Status:     false,
 			StatusCode: http.StatusNotFound,
 			Message:    "The requested resource was not found",
-			Data:       map[string]any{},
 		})
 		c.Next()
 	}
@@ -43,7 +41,6 @@ func InternalServerErrorHandler(c *gin.Context, _ any) {
 		Status:     false,
 		StatusCode: http.StatusInternalServerError,
 		Message:    "The server encountered an internal error",
-		Data:       map[string]any{},
 	})
 	c.Next()
 }

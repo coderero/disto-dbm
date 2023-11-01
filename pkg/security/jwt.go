@@ -115,7 +115,6 @@ func TokenRevoked(accessToken string, refreshToken string, c *gin.Context, refre
 				Status:     false,
 				StatusCode: http.StatusUnauthorized,
 				Message:    "Any of the Token's Have been Revoked",
-				Data:       map[string]any{},
 			})
 			return true
 		}
@@ -126,7 +125,6 @@ func TokenRevoked(accessToken string, refreshToken string, c *gin.Context, refre
 			Status:     false,
 			StatusCode: http.StatusUnauthorized,
 			Message:    "Access Token has been Revoked",
-			Data:       map[string]any{},
 		})
 		return true
 	}

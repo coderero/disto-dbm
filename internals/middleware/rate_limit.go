@@ -38,7 +38,6 @@ func RateLimitHandler(limit int, duration time.Duration) gin.HandlerFunc {
 					Status:     false,
 					StatusCode: http.StatusTooManyRequests,
 					Message:    "You have exceeded your request limit",
-					Data:       map[string]any{},
 				})
 				c.Next()
 				return

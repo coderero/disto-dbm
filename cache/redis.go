@@ -23,8 +23,3 @@ func init() {
 		DB:       0,
 	})
 }
-
-// The function returns a Redis client.
-func getClient() *redis.Client {
-	return client
-}
