@@ -14,7 +14,7 @@ func authRouter(group *gin.RouterGroup) {
 	{
 		group.POST("/register", auth.Register)
 		group.POST("/login", auth.Login)
-		group.GET("/logout", auth.Logout)
+		group.POST("/logout", auth.Logout)
 		group.POST("/refresh", auth.RefreshToken)
 		group.GET("/isloggedin", auth.IsLoggedIn)
 	}
