@@ -94,8 +94,8 @@ func (*AuthController) Register(c *gin.Context) {
 		})
 		return
 	}
-	c.SetCookie("__t", accessToken, 300, "/", "localhost", false, true)
-	c.SetCookie("__rt", refreshToken, 86400, "/", "localhost", false, true)
+	c.SetCookie("__t", accessToken, 300, "/", "localhost", true, true)
+	c.SetCookie("__rt", refreshToken, 86400, "/", "localhost", true, true)
 
 	c.JSON(http.StatusCreated, types.Response{
 		Status:     true,
@@ -182,8 +182,8 @@ func (*AuthController) Login(c *gin.Context) {
 		})
 		return
 	}
-	c.SetCookie("__t", accessToken, 300, "/", "localhost", false, true)
-	c.SetCookie("__rt", refreshToken, 86400, "/", "localhost", false, true)
+	c.SetCookie("__t", accessToken, 300, "/", "localhost", true, true)
+	c.SetCookie("__rt", refreshToken, 86400, "/", "localhost", true, true)
 
 	c.JSON(http.StatusOK, types.Response{
 		Status:     true,
@@ -221,8 +221,8 @@ func (*AuthController) Logout(c *gin.Context) {
 	// token and refresh token as parameters.
 
 	// The code snippet is deleting the access token and refresh token cookies from the response.
-	c.SetCookie("__t", "", -1, "/", "localhost", false, true)
-	c.SetCookie("__rt", "", -1, "/", "localhost", false, true)
+	c.SetCookie("__t", "", -1, "/", "localhost", true, true)
+	c.SetCookie("__rt", "", -1, "/", "localhost", true, true)
 
 	c.JSON(http.StatusOK, types.Response{
 		Status:     true,
