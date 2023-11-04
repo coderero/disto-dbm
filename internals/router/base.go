@@ -35,8 +35,12 @@ func Router() *gin.Engine {
 	// Sub-Routers
 	sub := r.Group("/api/v1")
 
+	// Add Global Middlewares
+	sub.Use(middleware.CsrfCheck())
+
 	// Route Handlers
 	authRouter(sub)
+	csrfRouter(sub)
 	appRouter(sub)
 
 	return r

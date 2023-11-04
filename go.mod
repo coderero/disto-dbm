@@ -27,6 +27,7 @@ require (
 	github.com/golang/protobuf v1.5.0 // indirect
 	github.com/golodash/galidator v1.4.3 // indirect
 	github.com/golodash/godash v1.2.0 // indirect
+	github.com/gorilla/csrf v1.7.1 // indirect
 	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
