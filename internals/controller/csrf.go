@@ -13,7 +13,6 @@ type CSRFController struct{}
 func (CSRFController) GenerateCsrfToken(c *gin.Context) {
 	token := csrf.Token(c.Request)
 	c.Header("X-CSRF-Token", token)
-	c.Request.Header.Set("X-CSRF-Token", token)
 	c.JSON(http.StatusOK, types.Response{
 		Status:     true,
 		StatusCode: http.StatusOK,
