@@ -47,7 +47,7 @@ func (*AuthController) Register(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.Response{
 			Status: types.Status{
 				Code: http.StatusBadRequest,
-				Msg:  fmt.Sprintf("%s", customizer.DecryptErrors(err)),
+				Msg:  validator(customizer, err),
 			},
 		})
 		return
@@ -133,7 +133,7 @@ func (*AuthController) Login(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.Response{
 			Status: types.Status{
 				Code: http.StatusBadRequest,
-				Msg:  fmt.Sprintf("%s", customizer.DecryptErrors(err)),
+				Msg:  validator(customizer, err),
 			},
 		})
 		return
@@ -146,23 +146,22 @@ func (*AuthController) Login(c *gin.Context) {
 	var user *models.User
 
 	registeredObj := user.GetUserForLogin(login.Username, login.Email)
+	if registeredObj.ID == 0 {
+		c.JSON(http.StatusNotFound, types.Response{
+			Status: types.Status{
+				Code: http.StatusNotFound,
+				Msg:  "User not found",
+			},
+		})
+		return
+	}
 
 	// Check for password
 	if !security.ComparePassword(login.Password, registeredObj.Password) {
 		c.JSON(http.StatusUnauthorized, types.Response{
 			Status: types.Status{
 				Code: http.StatusUnauthorized,
-				Msg:  "Unauthorized",
-			},
-		})
-		return
-	}
-
-	if registeredObj.ID == 0 {
-		c.JSON(http.StatusNotFound, types.Response{
-			Status: types.Status{
-				Code: http.StatusNotFound,
-				Msg:  "User not found",
+				Msg:  "Invalid Password",
 			},
 		})
 		return
@@ -388,8 +387,19 @@ func revoke(accessToken string, refreshToken string) {
 
 // The loginValidation function checks if the required fields for login are provided and returns true
 // if there are any errors.
-func loginValidation(c *gin.Context, register types.Login) bool {
-	if register.Email != "" && register.Username != "" {
+func loginValidation(c *gin.Context, login types.Login) bool {
+
+	if login.Email == "" || login.Username == "" {
+		c.JSON(http.StatusUnprocessableEntity, types.Response{
+			Status: types.Status{
+				Code: http.StatusUnprocessableEntity,
+				Msg:  "Username or Email is required",
+			},
+		})
+		return true
+	}
+
+	if login.Email != "" && login.Username != "" {
 		c.JSON(http.StatusUnprocessableEntity, types.Response{
 			Status: types.Status{
 				Code: http.StatusUnprocessableEntity,
@@ -409,4 +419,23 @@ func loginValidation(c *gin.Context, register types.Login) bool {
 	}
 
 	return false
+}
+
+func validator(customizer galidator.Validator, err error) string {
+	var errMsg string
+
+	var errors = customizer.DecryptErrors(err).(map[string]any)
+	// Find length of errors
+
+	for k := range errors {
+		errMsg += fmt.Sprintf("%s, ", k)
+	}
+
+	errMsg = strings.TrimSuffix(errMsg, ", ")
+	if len(errors) > 1 {
+		errMsg = fmt.Sprintf("%s are  required", errMsg)
+		return errMsg
+	}
+	errMsg = fmt.Sprintf("%s is required", errMsg)
+	return errMsg
 }
