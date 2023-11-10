@@ -35,9 +35,10 @@ func RateLimitHandler(limit int, duration time.Duration) gin.HandlerFunc {
 			// If the IP address is in the map, exceed the limit
 			if count >= limit {
 				c.AbortWithStatusJSON(http.StatusTooManyRequests, types.Response{
-					Status:     false,
-					StatusCode: http.StatusTooManyRequests,
-					Message:    "You have exceeded your request limit",
+					Status: types.Status{
+						Code: http.StatusTooManyRequests,
+						Msg:  "Too many requests",
+					},
 				})
 				c.Next()
 				return

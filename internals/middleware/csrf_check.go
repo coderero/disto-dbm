@@ -26,11 +26,9 @@ func parseMiddleware(middleware func(http.Handler) http.Handler) gin.HandlerFunc
 
 		if c.Writer.Status() > 399 || c.Writer.Status() == http.StatusForbidden {
 			c.AbortWithStatusJSON(http.StatusForbidden, types.Response{
-				Status:     false,
-				StatusCode: http.StatusForbidden,
-				Message:    "Forbidden",
-				Data: map[string]interface{}{
-					"error": "CSRF token invalid",
+				Status: types.Status{
+					Code: http.StatusForbidden,
+					Msg:  "Forbidden",
 				},
 			})
 			return

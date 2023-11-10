@@ -13,9 +13,10 @@ import (
 func CheckContentType(ctx *gin.Context, t string) bool {
 	if ctx.Request.Header.Get("Content-Type") != t {
 		ctx.JSON(422, types.Response{
-			Status:     false,
-			StatusCode: http.StatusUnprocessableEntity,
-			Message:    fmt.Sprintf("The request body must be of type '%s'", t),
+			Status: types.Status{
+				Code: http.StatusUnprocessableEntity,
+				Msg:  fmt.Sprintf("Content-Type must be %s", t),
+			},
 		})
 		return true
 	}

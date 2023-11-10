@@ -25,11 +25,9 @@ func JWTAuthMiddleWare() gin.HandlerFunc {
 			// Check if the type of token is Bearer
 			if typeOfToken[0] != "Bearer" {
 				c.JSON(http.StatusUnauthorized, types.Response{
-					Status:     false,
-					StatusCode: http.StatusUnauthorized,
-					Message:    "Unauthorized",
-					Data: map[string]any{
-						"error": "Check the Authorization header",
+					Status: types.Status{
+						Code: http.StatusUnauthorized,
+						Msg:  "Check the Authorization header",
 					},
 				})
 				c.Abort()
@@ -72,11 +70,9 @@ func JWTAuthMiddleWare() gin.HandlerFunc {
 		// Check if the cookie is present
 		if accessToken == "" && refreshToken == "" {
 			c.JSON(http.StatusUnauthorized, types.Response{
-				Status:     false,
-				StatusCode: http.StatusUnauthorized,
-				Message:    "Unauthorized",
-				Data: map[string]any{
-					"error": "You are not logged in",
+				Status: types.Status{
+					Code: http.StatusUnauthorized,
+					Msg:  "Unauthorized",
 				},
 			})
 			c.Abort()
@@ -87,11 +83,9 @@ func JWTAuthMiddleWare() gin.HandlerFunc {
 		haveErr := checkTokenRevoketion(accessToken, refreshToken, c)
 		if haveErr {
 			c.JSON(http.StatusUnauthorized, types.Response{
-				Status:     false,
-				StatusCode: http.StatusUnauthorized,
-				Message:    "Unauthorized",
-				Data: map[string]any{
-					"error": "Token's have been revoked.",
+				Status: types.Status{
+					Code: http.StatusUnauthorized,
+					Msg:  "Unauthorized",
 				},
 			})
 			c.Abort()
@@ -113,11 +107,9 @@ func JWTAuthMiddleWare() gin.HandlerFunc {
 		// If both the access token and refresh token are expired, return an error
 		if security.IsTokenExpired(accessToken) && security.IsTokenExpired(refreshToken) {
 			c.JSON(http.StatusUnauthorized, types.Response{
-				Status:     false,
-				StatusCode: http.StatusUnauthorized,
-				Message:    "Unauthorized",
-				Data: map[string]any{
-					"error": "Access Token and Refresh Token has been Expired",
+				Status: types.Status{
+					Code: http.StatusUnauthorized,
+					Msg:  "Unauthorized",
 				},
 			})
 			c.Abort()
@@ -150,11 +142,9 @@ func checkTokenRevoketion(accessToken string, refreshToken string, c *gin.Contex
 // the current request.
 func InvalidToken(c *gin.Context) {
 	c.JSON(http.StatusUnauthorized, types.Response{
-		Status:     false,
-		StatusCode: http.StatusUnauthorized,
-		Message:    "Unauthorized",
-		Data: map[string]any{
-			"error": "Invalid Token",
+		Status: types.Status{
+			Code: http.StatusUnauthorized,
+			Msg:  "Invalid Token",
 		},
 	})
 	c.Abort()

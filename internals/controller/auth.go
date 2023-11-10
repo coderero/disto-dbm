@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -44,20 +45,20 @@ func (*AuthController) Register(c *gin.Context) {
 	// Bind the form data to the Register struct
 	if err := c.ShouldBindWith(&signup, binding.Form); err != nil {
 		c.JSON(http.StatusBadRequest, types.Response{
-			Status:     false,
-			StatusCode: http.StatusBadRequest,
-			Message:    "Fields are required",
-			Data: map[string]any{
-				"error": customizer.DecryptErrors(err),
-			}})
+			Status: types.Status{
+				Code: http.StatusBadRequest,
+				Msg:  fmt.Sprintf("%s", customizer.DecryptErrors(err)),
+			},
+		})
 		return
 	}
 	err3 := models.User{}.CheckForUser(signup.Username, signup.Email)
 	if err3 {
 		c.JSON(http.StatusConflict, types.Response{
-			Status:     false,
-			StatusCode: http.StatusConflict,
-			Message:    "User already exists",
+			Status: types.Status{
+				Code: http.StatusConflict,
+				Msg:  "User already exists",
+			},
 		})
 		return
 	}
@@ -84,9 +85,10 @@ func (*AuthController) Register(c *gin.Context) {
 	accessToken, refreshToken := security.GenerateAuthTokens(registeredObj)
 	if tokenActionType == "true" {
 		c.JSON(http.StatusCreated, types.Response{
-			Status:     true,
-			StatusCode: http.StatusCreated,
-			Message:    "Login Successful",
+			Status: types.Status{
+				Code: http.StatusCreated,
+				Msg:  "Login Successful",
+			},
 			Data: map[string]any{
 				"access_token":  accessToken,
 				"refresh_token": refreshToken,
@@ -98,9 +100,10 @@ func (*AuthController) Register(c *gin.Context) {
 	c.SetCookie("__rt", refreshToken, 86400, "/", "localhost", true, true)
 
 	c.JSON(http.StatusCreated, types.Response{
-		Status:     true,
-		StatusCode: http.StatusCreated,
-		Message:    "Login Successful",
+		Status: types.Status{
+			Code: http.StatusCreated,
+			Msg:  "Login Successful",
+		},
 	})
 }
 
@@ -128,12 +131,11 @@ func (*AuthController) Login(c *gin.Context) {
 
 	if err := c.ShouldBindWith(&login, binding.Form); err != nil {
 		c.JSON(http.StatusBadRequest, types.Response{
-			Status:     false,
-			StatusCode: http.StatusBadRequest,
-			Message:    "Fields are required",
-			Data: map[string]any{
-				"error": customizer.DecryptErrors(err),
-			}})
+			Status: types.Status{
+				Code: http.StatusBadRequest,
+				Msg:  fmt.Sprintf("%s", customizer.DecryptErrors(err)),
+			},
+		})
 		return
 	}
 
@@ -148,18 +150,20 @@ func (*AuthController) Login(c *gin.Context) {
 	// Check for password
 	if !security.ComparePassword(login.Password, registeredObj.Password) {
 		c.JSON(http.StatusUnauthorized, types.Response{
-			Status:     false,
-			StatusCode: http.StatusUnauthorized,
-			Message:    "Invalid Credentials",
+			Status: types.Status{
+				Code: http.StatusUnauthorized,
+				Msg:  "Unauthorized",
+			},
 		})
 		return
 	}
 
 	if registeredObj.ID == 0 {
 		c.JSON(http.StatusNotFound, types.Response{
-			Status:     false,
-			StatusCode: http.StatusNotFound,
-			Message:    "User not found",
+			Status: types.Status{
+				Code: http.StatusNotFound,
+				Msg:  "User not found",
+			},
 		})
 		return
 	}
@@ -172,9 +176,10 @@ func (*AuthController) Login(c *gin.Context) {
 	if tokenActionType == "true" {
 
 		c.JSON(http.StatusOK, types.Response{
-			Status:     true,
-			StatusCode: http.StatusOK,
-			Message:    "Login Successful",
+			Status: types.Status{
+				Code: http.StatusOK,
+				Msg:  "Login Successful",
+			},
 			Data: map[string]any{
 				"access_token":  accessToken,
 				"refresh_token": refreshToken,
@@ -186,9 +191,10 @@ func (*AuthController) Login(c *gin.Context) {
 	c.SetCookie("__rt", refreshToken, 86400, "/", "localhost", true, true)
 
 	c.JSON(http.StatusOK, types.Response{
-		Status:     true,
-		StatusCode: http.StatusOK,
-		Message:    "Login Successful",
+		Status: types.Status{
+			Code: http.StatusOK,
+			Msg:  "Login Successful",
+		},
 	})
 
 }
@@ -205,11 +211,9 @@ func (*AuthController) Logout(c *gin.Context) {
 	// more information for the user to avoid panicking or 500 error.
 	if token == "" && raw_accessToken == nil && raw_refreshToken == nil {
 		c.JSON(http.StatusBadRequest, types.Response{
-			Status:     false,
-			StatusCode: http.StatusBadRequest,
-			Message:    "Bad Request",
-			Data: map[string]any{
-				"error": "No token provided (i.e. you are not logged in).",
+			Status: types.Status{
+				Code: http.StatusBadRequest,
+				Msg:  "No token provided (i.e. you are not logged in).",
 			}})
 		return
 	}
@@ -225,9 +229,10 @@ func (*AuthController) Logout(c *gin.Context) {
 	c.SetCookie("__rt", "", -1, "/", "localhost", true, true)
 
 	c.JSON(http.StatusOK, types.Response{
-		Status:     true,
-		StatusCode: http.StatusOK,
-		Message:    "Logout Successful",
+		Status: types.Status{
+			Code: http.StatusOK,
+			Msg:  "Logout Successful",
+		},
 	})
 
 }
@@ -247,12 +252,11 @@ func (*AuthController) RefreshToken(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&tokens); err != nil {
 		c.JSON(http.StatusBadRequest, types.Response{
-			Status:     false,
-			StatusCode: http.StatusBadRequest,
-			Message:    "Fields are required",
-			Data: map[string]any{
-				"error": customizer.DecryptErrors(err),
-			}})
+			Status: types.Status{
+				Code: http.StatusBadRequest,
+				Msg:  fmt.Sprintf("%s", customizer.DecryptErrors(err)),
+			},
+		})
 		return
 	}
 
@@ -267,11 +271,9 @@ func (*AuthController) RefreshToken(c *gin.Context) {
 
 	if security.IsTokenExpired(refreshToken) {
 		c.JSON(http.StatusBadRequest, types.Response{
-			Status:     false,
-			StatusCode: http.StatusBadRequest,
-			Message:    "Unauthorized",
-			Data: map[string]any{
-				"error": "Refresh Token Expired",
+			Status: types.Status{
+				Code: http.StatusBadRequest,
+				Msg:  "Token Expired",
 			},
 		})
 		return
@@ -280,9 +282,10 @@ func (*AuthController) RefreshToken(c *gin.Context) {
 	claims, err := security.VerifyToken(refreshToken)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, types.Response{
-			Status:     false,
-			StatusCode: http.StatusUnauthorized,
-			Message:    "Unauthorized",
+			Status: types.Status{
+				Code: http.StatusUnauthorized,
+				Msg:  "Unauthorized",
+			},
 		})
 		return
 	}
@@ -290,9 +293,10 @@ func (*AuthController) RefreshToken(c *gin.Context) {
 	accessToken = security.GenerateToken(sub, time.Now().Add(time.Minute*5))
 
 	c.JSON(http.StatusOK, types.Response{
-		Status:     true,
-		StatusCode: http.StatusOK,
-		Message:    "Token Refreshed",
+		Status: types.Status{
+			Code: http.StatusOK,
+			Msg:  "Token Refreshed",
+		},
 		Data: map[string]any{
 			"access_token": accessToken,
 		},
@@ -306,11 +310,9 @@ func (*AuthController) IsLoggedIn(c *gin.Context) {
 
 	if token == "" && raw_accessToken == nil && raw_refreshToken == nil {
 		c.JSON(http.StatusBadRequest, types.Response{
-			Status:     false,
-			StatusCode: http.StatusBadRequest,
-			Message:    "Bad Request",
-			Data: map[string]any{
-				"error": "No token provided (i.e. you are not logged in).",
+			Status: types.Status{
+				Code: http.StatusBadRequest,
+				Msg:  "No token provided (i.e. you are not logged in).",
 			}})
 		return
 	}
@@ -318,21 +320,18 @@ func (*AuthController) IsLoggedIn(c *gin.Context) {
 	revokedOrExpired := (cache.IsTokenRevoked(token) && cache.IsTokenRevoked(raw_accessToken.Value) && cache.IsTokenRevoked(raw_refreshToken.Value)) || (security.IsTokenExpired(token) && security.IsTokenExpired(raw_accessToken.Value) && security.IsTokenExpired(raw_refreshToken.Value))
 	if revokedOrExpired {
 		c.JSON(http.StatusBadRequest, types.Response{
-			Status:     false,
-			StatusCode: http.StatusBadRequest,
-			Message:    "Bad Request",
-			Data: map[string]any{
-				"error": "Token's have been revoked or expired.",
-			}})
+			Status: types.Status{
+				Code: http.StatusBadRequest,
+				Msg:  "Token Expired or Revoked",
+			},
+		})
 		return
 	}
 
 	c.JSON(http.StatusOK, types.Response{
-		Status:     true,
-		StatusCode: http.StatusOK,
-		Message:    "You are Logged in",
-		Data: map[string]any{
-			"details": true,
+		Status: types.Status{
+			Code: http.StatusOK,
+			Msg:  "Logged In",
 		},
 	})
 }
@@ -392,20 +391,19 @@ func revoke(accessToken string, refreshToken string) {
 func loginValidation(c *gin.Context, register types.Login) bool {
 	if register.Email != "" && register.Username != "" {
 		c.JSON(http.StatusUnprocessableEntity, types.Response{
-			Status:     false,
-			StatusCode: http.StatusUnprocessableEntity,
-			Message:    "Either Fields is required",
-			Data: map[string]any{
-				"error": "either username or email is required",
+			Status: types.Status{
+				Code: http.StatusUnprocessableEntity,
+				Msg:  "Only Username or Email is required",
 			},
 		})
 		return true
 	}
 	if len(c.Request.PostForm) > 3 {
 		c.JSON(http.StatusUnprocessableEntity, types.Response{
-			Status:     false,
-			StatusCode: http.StatusUnprocessableEntity,
-			Message:    "Only Username or Email and Password is required",
+			Status: types.Status{
+				Code: http.StatusUnprocessableEntity,
+				Msg:  "Only Username or Email is required",
+			},
 		})
 		return true
 	}

@@ -112,9 +112,10 @@ func TokenRevoked(accessToken string, refreshToken string, c *gin.Context, refre
 	if refresh {
 		if cache.IsTokenRevoked(refreshToken) || cache.IsTokenRevoked(accessToken) {
 			c.JSON(http.StatusUnauthorized, types.Response{
-				Status:     false,
-				StatusCode: http.StatusUnauthorized,
-				Message:    "Any of the Token's Have been Revoked",
+				Status: types.Status{
+					Code: http.StatusUnauthorized,
+					Msg:  "Any of the Token's Have been Revoked",
+				},
 			})
 			return true
 		}
@@ -122,9 +123,10 @@ func TokenRevoked(accessToken string, refreshToken string, c *gin.Context, refre
 
 	if cache.IsTokenRevoked(accessToken) {
 		c.JSON(http.StatusUnauthorized, types.Response{
-			Status:     false,
-			StatusCode: http.StatusUnauthorized,
-			Message:    "Access Token has been Revoked",
+			Status: types.Status{
+				Code: http.StatusUnauthorized,
+				Msg:  "Access Token has been Revoked",
+			},
 		})
 		return true
 	}

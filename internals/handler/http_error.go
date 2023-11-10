@@ -12,9 +12,10 @@ import (
 func NoMethodHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.JSON(http.StatusMethodNotAllowed, types.Response{
-			Status:     false,
-			StatusCode: http.StatusMethodNotAllowed,
-			Message:    "The requested method is not allowed",
+			Status: types.Status{
+				Code: http.StatusMethodNotAllowed,
+				Msg:  "Method Not Allowed",
+			},
 		})
 		c.Next()
 	}
@@ -26,9 +27,10 @@ func NoMethodHandler() gin.HandlerFunc {
 func NoRouteHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, types.Response{
-			Status:     false,
-			StatusCode: http.StatusNotFound,
-			Message:    "The requested resource was not found",
+			Status: types.Status{
+				Code: http.StatusNotFound,
+				Msg:  "Not Found",
+			},
 		})
 		c.Next()
 	}
@@ -38,9 +40,10 @@ func NoRouteHandler() gin.HandlerFunc {
 // with a status code of 500 and an error message.
 func InternalServerErrorHandler(c *gin.Context, _ any) {
 	c.AbortWithStatusJSON(http.StatusInternalServerError, types.Response{
-		Status:     false,
-		StatusCode: http.StatusInternalServerError,
-		Message:    "The server encountered an internal error",
+		Status: types.Status{
+			Code: http.StatusInternalServerError,
+			Msg:  "Internal Server Error",
+		},
 	})
 	c.Next()
 }

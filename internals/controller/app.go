@@ -11,9 +11,11 @@ type AppController struct{}
 
 func (*AppController) Home(c *gin.Context) {
 	c.JSON(http.StatusOK, types.Response{
-		Status:     true,
-		StatusCode: http.StatusOK,
-		Message:    "Hello World!",
-		Data:       nil,
-	})
+		Status: types.Status{
+			Code: http.StatusOK,
+			Msg:  "OK",
+		},
+		Data: map[string]interface{}{
+			"message": "Hello World!",
+		}})
 }
