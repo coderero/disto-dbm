@@ -389,7 +389,7 @@ func revoke(accessToken string, refreshToken string) {
 // if there are any errors.
 func loginValidation(c *gin.Context, login types.Login) bool {
 
-	if login.Email == "" || login.Username == "" {
+	if login.Email == "" && login.Username == "" {
 		c.JSON(http.StatusUnprocessableEntity, types.Response{
 			Status: types.Status{
 				Code: http.StatusUnprocessableEntity,
