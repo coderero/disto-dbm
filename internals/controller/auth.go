@@ -587,19 +587,6 @@ func loginValidation(c *gin.Context, login types.Login) bool {
 		return true
 	}
 
-	// The code below is checking if the length of the `PostForm` field in the `Request` object is greater
-	// than 3. If it is, it returns a JSON response with a status code of 422 (Unprocessable Entity) and a
-	// message indicating that only the username or email is required.
-	if len(c.Request.PostForm) > 3 {
-		c.JSON(http.StatusUnprocessableEntity, types.Response{
-			Status: types.Status{
-				Code: http.StatusUnprocessableEntity,
-				Msg:  "only username or email and password is required",
-			},
-		})
-		return true
-	}
-
 	return false
 }
 
