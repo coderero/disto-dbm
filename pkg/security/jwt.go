@@ -117,6 +117,7 @@ func IsTokenRevoked(accessToken string, refreshToken string, c *gin.Context, ref
 			})
 			return true
 		}
+		return false
 	}
 
 	// The code block is checking if the access token has been revoked by calling the `IsTokenRevoked()`
