@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -22,4 +23,7 @@ func init() {
 		Password: "",
 		DB:       0,
 	})
+	if err := client.Ping(context.Background()).Err(); err != nil {
+		panic("failed to connect to cache server")
+	}
 }

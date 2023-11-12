@@ -14,10 +14,16 @@ import (
 func JWTAuthMiddleWare() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		// Get the token from the header
+		// `token := c.Request.Header.Get("Authorization")` is retrieving the value of the "Authorization"
+		// header from the HTTP request. The "Authorization" header is commonly used to send authentication
+		// credentials, such as a token, with the request. In this case, the code is retrieving the token
+		// from the header and assigning it to the `token` variable for further processing.
 		token := c.Request.Header.Get("Authorization")
 
-		// Check if the token is empty
+		// This code block is checking if the `token` variable is not empty. If the token is not empty, it
+		// splits the token to get the type of token. It then checks if the type of token is "Bearer". If the
+		// type of token is not "Bearer", it returns a JSON response indicating that the Authorization header
+		// is incorrect and aborts the current request.
 		if token != "" {
 			// Split the token to get the type of token
 			typeOfToken := strings.Split(token, " ")
@@ -34,7 +40,7 @@ func JWTAuthMiddleWare() gin.HandlerFunc {
 				return
 			}
 			// Verify the token
-			if security.TokenRevoked(typeOfToken[1], "", c, false) {
+			if security.IsTokenRevoked(typeOfToken[1], "", c, false) {
 				InvalidToken(c)
 				return
 			}
@@ -54,12 +60,25 @@ func JWTAuthMiddleWare() gin.HandlerFunc {
 			}
 		}
 
-		// If the token is empty, check if the cookie is present
-		var accessToken string
-		var refreshToken string
+		// The code `var ( accessToken string refreshToken string )` is declaring two variables,
+		// `accessToken` and `refreshToken`, of type string. These variables are used to store the values of
+		// access token and refresh token, respectively.
+		var (
+			accessToken  string
+			refreshToken string
+		)
 
+		// These lines of code are retrieving the values of two cookies named "__t" and "__rt" from the HTTP
+		// request. The cookies are accessed using the `c.Request.Cookie()` method, which returns a cookie and
+		// an error.The retrieved cookie values are then assigned to the variables `raw_accessToken` and
+		// `raw_refreshToken` respectively.
 		raw_accessToken, _ := c.Request.Cookie("__t")
 		raw_refreshToken, _ := c.Request.Cookie("__rt")
+
+		// The code block is checking if the `raw_accessToken` and `raw_refreshToken` variables are not nil.
+		// If they are not nil, it means that the corresponding cookies "__t" and "__rt" exist in the HTTP
+		// request. The values of these cookies are then assigned to the `accessToken` and `refreshToken`
+		// variables, respectively.
 		if raw_accessToken != nil {
 			accessToken = raw_accessToken.Value
 		}
@@ -67,7 +86,11 @@ func JWTAuthMiddleWare() gin.HandlerFunc {
 			refreshToken = raw_refreshToken.Value
 		}
 
-		// Check if the cookie is present
+		// The code block is checking if both the `accessToken` and `refreshToken` variables are empty. If
+		// they are empty, it means that the user is not authenticated and does not have valid tokens. In
+		// this case, the code returns a JSON response with a status code of 401 (Unauthorized) and a message
+		// indicating that the user is unauthorized. It then aborts the current request and returns from the
+		// middleware function.
 		if accessToken == "" && refreshToken == "" {
 			c.JSON(http.StatusUnauthorized, types.Response{
 				Status: types.Status{
@@ -79,7 +102,9 @@ func JWTAuthMiddleWare() gin.HandlerFunc {
 			return
 		}
 
-		// Check if the token is revoked
+		// The code block is calling the `checkTokenRevoketion` function with the `accessToken`,
+		// `refreshToken`, and `c` (gin.Context) as arguments. The function checks if the tokens have been
+		// revoked based on the provided access token and refresh token.
 		haveErr := checkTokenRevoketion(accessToken, refreshToken, c)
 		if haveErr {
 			c.JSON(http.StatusUnauthorized, types.Response{
@@ -92,7 +117,8 @@ func JWTAuthMiddleWare() gin.HandlerFunc {
 			return
 		}
 
-		// Check if the token is expired
+		// The code block is checking if the access token is not expired. If the access token is not expired,
+		// it calls the `c.Next()` function to pass the request to the next middleware function.
 		if !security.IsTokenExpired(accessToken) {
 			c.Next()
 		}
@@ -124,13 +150,13 @@ func JWTAuthMiddleWare() gin.HandlerFunc {
 // token.
 func checkTokenRevoketion(accessToken string, refreshToken string, c *gin.Context) bool {
 	if accessToken != "" && refreshToken != "" {
-		revoked := security.TokenRevoked(accessToken, refreshToken, c, true)
+		revoked := security.IsTokenRevoked(accessToken, refreshToken, c, true)
 		if revoked {
 			return true
 		}
 	}
 	if refreshToken != "" && accessToken == "" {
-		revoked := security.TokenRevoked("", refreshToken, c, false)
+		revoked := security.IsTokenRevoked("", refreshToken, c, false)
 		if revoked {
 			return true
 		}

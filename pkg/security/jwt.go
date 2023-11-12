@@ -61,13 +61,20 @@ func init() {
 // The function generates a JWT token with a specified subject and expiration time using the RS256
 // signing method.
 func GenerateToken(sub string, exp time.Time) string {
+	// The `jwt.NewNumericDate()` function is used to convert the expiration time to a numeric date
+	// format.
 	expiresIn := jwt.NewNumericDate(exp)
 
+	// The `jwt.RegisteredClaims` struct is used to store the claims of the JWT token. The `Subject`
+	// field is used to store the subject of the token, which is the email of the user. The `ExpiresAt`
+	// field is used to store the expiration time of the token.
 	claims := jwt.RegisteredClaims{
 		Subject:   sub,
 		ExpiresAt: expiresIn,
 	}
 
+	// The `jwt.NewWithClaims()` function is used to create a new JWT token with the specified claims
+	// and signing method.
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 	signedToken, err := token.SignedString(privateKey)
 	if err != nil {
@@ -95,20 +102,11 @@ func IsTokenExpired(token string) bool {
 	return true
 }
 
-func IsTokenValid(token string) bool {
-	jwtToken, err := VerifyToken(token)
-	if err != nil {
-		return false
-	}
-	if jwtToken.Valid {
-		return true
-	}
-	return false
-}
-
 // The function checks if a token has been revoked and returns a boolean value indicating whether the
 // token is revoked or not.
-func TokenRevoked(accessToken string, refreshToken string, c *gin.Context, refresh bool) bool {
+func IsTokenRevoked(accessToken string, refreshToken string, c *gin.Context, refresh bool) bool {
+	// The code block is checking if the `refresh` parameter is `true`. If it is, it means that the
+	// function is being called for checking the revocation of the refresh token and access token.
 	if refresh {
 		if cache.IsTokenRevoked(refreshToken) || cache.IsTokenRevoked(accessToken) {
 			c.JSON(http.StatusUnauthorized, types.Response{
@@ -121,6 +119,10 @@ func TokenRevoked(accessToken string, refreshToken string, c *gin.Context, refre
 		}
 	}
 
+	// The code block is checking if the access token has been revoked by calling the `IsTokenRevoked()`
+	// function from the `cache` package. If the access token has been revoked, it returns `true` and
+	// sends a JSON response with a status code of `http.StatusUnauthorized` and a message indicating that
+	// the access token has been revoked.
 	if cache.IsTokenRevoked(accessToken) {
 		c.JSON(http.StatusUnauthorized, types.Response{
 			Status: types.Status{

@@ -1,6 +1,8 @@
 package router
 
 import (
+	"os"
+	"strings"
 	"time"
 
 	"coderero.dev/projects/go/gin/hello/internals/handler"
@@ -24,7 +26,7 @@ func Router() *gin.Engine {
 	r.Use(middleware.RateLimitHandler(100, time.Second))
 	r.Use(cors.New(cors.Config{
 		// ! Change this to the domain of your frontend or fetch the domains from redis cache
-		AllowOrigins: []string{"*"},
+		AllowOrigins: strings.Split(os.Getenv("ALLOWED_ORIGINS"), ","),
 		AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE"},
 
 		AllowHeaders:     []string{"Origin", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"},
