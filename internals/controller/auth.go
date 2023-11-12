@@ -64,7 +64,7 @@ func (*AuthController) Register(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.Response{
 			Status: types.Status{
 				Code: http.StatusBadRequest,
-				Msg:  "validation error",
+				Msg:  "you have provided an invalid json",
 			},
 		})
 		return
@@ -181,7 +181,7 @@ func (*AuthController) Login(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.Response{
 			Status: types.Status{
 				Code: http.StatusBadRequest,
-				Msg:  "validation error",
+				Msg:  "you have provided an invalid json",
 			},
 		})
 		return
@@ -215,7 +215,7 @@ func (*AuthController) Login(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, types.Response{
 			Status: types.Status{
 				Code: http.StatusUnauthorized,
-				Msg:  "invalid Password",
+				Msg:  "invalid password",
 			},
 		})
 		return
@@ -337,7 +337,7 @@ func (*AuthController) RefreshToken(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.Response{
 			Status: types.Status{
 				Code: http.StatusBadRequest,
-				Msg:  "validation error",
+				Msg:  "you have provided an invalid json",
 			},
 		})
 		return
