@@ -59,7 +59,7 @@ func (*AuthController) Register(c *gin.Context) {
 				Msg:  validator(customizer, err),
 			},
 		})
-
+		return
 	}
 
 	// The `loginValidation` function is used to check if the required fields for login are provided and
