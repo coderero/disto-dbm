@@ -69,7 +69,7 @@ func (*AuthController) Register(c *gin.Context) {
 					Msg:  "validation error",
 				},
 				Data: map[string]any{
-					"errors": "you have invalid fields in your json",
+					"error": "you have invalid fields in your json",
 				},
 			})
 			return
@@ -201,7 +201,7 @@ func (*AuthController) Login(c *gin.Context) {
 					Msg:  "validation error",
 				},
 				Data: map[string]any{
-					"errors": "you have invalid fields in your json",
+					"error": "you have invalid fields in your json",
 				},
 			})
 			return
@@ -369,7 +369,7 @@ func (*AuthController) RefreshToken(c *gin.Context) {
 					Msg:  "validation error",
 				},
 				Data: map[string]any{
-					"errors": "you have invalid fields in your json",
+					"error": "you have invalid fields in your json",
 				},
 			})
 			return
