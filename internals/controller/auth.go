@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -49,14 +48,23 @@ func (*AuthController) Register(c *gin.Context) {
 
 	// Bind the form data to the Register struct and check for errors in the process.
 	if err := c.ShouldBindJSON(&signup); err != nil {
-		notjsonValidity := isJSONValid(err, c)
-		if notjsonValidity {
+		if strings.Contains(err.Error(), "Key:") {
+
+			c.JSON(http.StatusBadRequest, types.Response{
+				Status: types.Status{
+					Code: http.StatusBadRequest,
+					Msg:  "validation error",
+				},
+				Data: map[string]any{
+					"errors": customizer.DecryptErrors(err),
+				},
+			})
 			return
 		}
 		c.JSON(http.StatusBadRequest, types.Response{
 			Status: types.Status{
 				Code: http.StatusBadRequest,
-				Msg:  validator(customizer, err),
+				Msg:  "validation error",
 			},
 		})
 		return
@@ -157,17 +165,26 @@ func (*AuthController) Login(c *gin.Context) {
 
 	// Bind the form data to the Login struct and check for errors in the process.
 	if err := c.ShouldBindJSON(&login); err != nil {
-		notjsonValidity := isJSONValid(err, c)
-		if notjsonValidity {
+		if strings.Contains(err.Error(), "Key:") {
+
+			c.JSON(http.StatusBadRequest, types.Response{
+				Status: types.Status{
+					Code: http.StatusBadRequest,
+					Msg:  "validation error",
+				},
+				Data: map[string]any{
+					"errors": customizer.DecryptErrors(err),
+				},
+			})
 			return
 		}
 		c.JSON(http.StatusBadRequest, types.Response{
 			Status: types.Status{
 				Code: http.StatusBadRequest,
-				Msg:  validator(customizer, err),
+				Msg:  "validation error",
 			},
 		})
-
+		return
 	}
 
 	// The `loginValidation` function is used to check if the required fields for login are provided and
@@ -304,14 +321,23 @@ func (*AuthController) RefreshToken(c *gin.Context) {
 
 	// Bind the form data to the RefreshToken struct and check for errors in the process.
 	if err := c.ShouldBindJSON(&tokens); err != nil {
-		notjsonValidity := isJSONValid(err, c)
-		if notjsonValidity {
+		if strings.Contains(err.Error(), "Key:") {
+
+			c.JSON(http.StatusBadRequest, types.Response{
+				Status: types.Status{
+					Code: http.StatusBadRequest,
+					Msg:  "validation error",
+				},
+				Data: map[string]any{
+					"errors": customizer.DecryptErrors(err),
+				},
+			})
 			return
 		}
 		c.JSON(http.StatusBadRequest, types.Response{
 			Status: types.Status{
 				Code: http.StatusBadRequest,
-				Msg:  fmt.Sprintf("%s", customizer.DecryptErrors(err)),
+				Msg:  "validation error",
 			},
 		})
 		return
@@ -537,55 +563,9 @@ func loginValidation(c *gin.Context, login types.Login) bool {
 	return false
 }
 
-// The `validator` function is used to validate the form data. It takes in the form data and a custom
-// error message as parameters to return a custom error message.
-func validator(customizer galidator.Validator, err error) string {
-
-	// The code below is declaring a variable `errMsg` of type string.
-	var errMsg string
-
-	// The code below is attempting to decrypt the errors returned by the `customizer.DecryptErrors`
-	// function and cast them to a map with string keys and values of any type.
-	var errors = customizer.DecryptErrors(err).(map[string]any)
-
-	// The code below is iterating over the keys of the "errors" map and concatenating them to the "errMsg"
-	// string variable. It uses the fmt.Sprintf function to format each key as a string and adds a comma
-	// and space after each key.
-	for k := range errors {
-		errMsg += fmt.Sprintf("%s, ", k)
-	}
-
-	// The code below is removing the trailing comma and space from the string variable `errMsg` using the
-	// `TrimSuffix` function and adding a custom message to the end of the string variable. If the length of
-	// the "errors" map is greater than 1, the code adds the string "are required" to the end of the string
-	// variable. Otherwise, it adds the string "is required" to the end of the string variable.
-	errMsg = strings.TrimSuffix(errMsg, ", ")
-	if len(errors) > 1 {
-		errMsg = fmt.Sprintf("%s are  required", errMsg)
-		return errMsg
-	}
-	errMsg = fmt.Sprintf("%s is required", errMsg)
-	return errMsg
-}
-
 // The `setTokenInCookies` function is used to set the access token and refresh token as cookies in the
 // response.
 func setTokenInCookies(c *gin.Context, accessToken string, refreshToken string) {
 	c.SetCookie("__t", accessToken, 300, "/", "localhost", true, true)
 	c.SetCookie("__rt", refreshToken, 86400, "/", "localhost", true, true)
-}
-
-// The function checks if an error message indicates an invalid JSON object and returns a JSON response
-// with an error message if it is.
-func isJSONValid(err error, c *gin.Context) bool {
-	if strings.Split(err.Error(), ":")[0] == "types.Login.readFieldHash" {
-		c.JSON(http.StatusBadRequest, types.Response{
-			Status: types.Status{
-				Code: http.StatusBadRequest,
-				Msg:  "please provide a valid json object",
-			},
-		})
-		return true
-	}
-	return false
 }
