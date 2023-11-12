@@ -61,11 +61,26 @@ func (*AuthController) Register(c *gin.Context) {
 			})
 			return
 		}
+		if strings.Contains(err.Error(), "ReadBool:") || strings.Contains(err.Error(), "readUint64:") || strings.Contains(err.Error(), "ReadString:") {
+
+			c.JSON(http.StatusBadRequest, types.Response{
+				Status: types.Status{
+					Code: http.StatusBadRequest,
+					Msg:  "validation error",
+				},
+				Data: map[string]any{
+					"errors": "you have invalid fields in your json",
+				},
+			})
+			return
+		}
 		c.JSON(http.StatusBadRequest, types.Response{
 			Status: types.Status{
 				Code: http.StatusBadRequest,
 				Msg:  "you have provided an invalid json",
 			},
+			Data: map[string]any{
+				"error": err.Error()},
 		})
 		return
 	}
@@ -178,11 +193,26 @@ func (*AuthController) Login(c *gin.Context) {
 			})
 			return
 		}
+		if strings.Contains(err.Error(), "ReadBool:") || strings.Contains(err.Error(), "readUint64:") || strings.Contains(err.Error(), "ReadString:") {
+
+			c.JSON(http.StatusBadRequest, types.Response{
+				Status: types.Status{
+					Code: http.StatusBadRequest,
+					Msg:  "validation error",
+				},
+				Data: map[string]any{
+					"errors": "you have invalid fields in your json",
+				},
+			})
+			return
+		}
 		c.JSON(http.StatusBadRequest, types.Response{
 			Status: types.Status{
 				Code: http.StatusBadRequest,
 				Msg:  "you have provided an invalid json",
 			},
+			Data: map[string]any{
+				"error": err.Error()},
 		})
 		return
 	}
@@ -330,6 +360,19 @@ func (*AuthController) RefreshToken(c *gin.Context) {
 				},
 				Data: map[string]any{
 					"errors": customizer.DecryptErrors(err),
+				},
+			})
+			return
+		}
+		if strings.Contains(err.Error(), "ReadBool:") || strings.Contains(err.Error(), "readUint64:") || strings.Contains(err.Error(), "ReadString:") {
+
+			c.JSON(http.StatusBadRequest, types.Response{
+				Status: types.Status{
+					Code: http.StatusBadRequest,
+					Msg:  "validation error",
+				},
+				Data: map[string]any{
+					"errors": "you have invalid fields in your json",
 				},
 			})
 			return

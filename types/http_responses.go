@@ -9,5 +9,5 @@ type Response struct {
 // The Status struct is used to as a response body.
 type Status struct {
 	Code int    `json:"code"`
-	Msg  string `json:"msg"`
+	Msg  string `json:"messageg"`
 }
