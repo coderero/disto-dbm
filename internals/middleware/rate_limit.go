@@ -37,7 +37,7 @@ func RateLimitHandler(limit int, duration time.Duration) gin.HandlerFunc {
 				c.AbortWithStatusJSON(http.StatusTooManyRequests, types.Response{
 					Status: types.Status{
 						Code: http.StatusTooManyRequests,
-						Msg:  "Too many requests",
+						Msg:  "too many requests",
 					},
 				})
 				c.Next()

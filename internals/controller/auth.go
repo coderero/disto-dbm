@@ -49,13 +49,17 @@ func (*AuthController) Register(c *gin.Context) {
 
 	// Bind the form data to the Register struct and check for errors in the process.
 	if err := c.ShouldBindJSON(&signup); err != nil {
+		notjsonValidity := isJSONValid(err, c)
+		if notjsonValidity {
+			return
+		}
 		c.JSON(http.StatusBadRequest, types.Response{
 			Status: types.Status{
 				Code: http.StatusBadRequest,
 				Msg:  validator(customizer, err),
 			},
 		})
-		return
+
 	}
 
 	// The `loginValidation` function is used to check if the required fields for login are provided and
@@ -65,7 +69,7 @@ func (*AuthController) Register(c *gin.Context) {
 		c.JSON(http.StatusConflict, types.Response{
 			Status: types.Status{
 				Code: http.StatusConflict,
-				Msg:  "User already exists",
+				Msg:  "user already exists",
 			},
 		})
 		return
@@ -99,7 +103,7 @@ func (*AuthController) Register(c *gin.Context) {
 		c.JSON(http.StatusCreated, types.Response{
 			Status: types.Status{
 				Code: http.StatusCreated,
-				Msg:  "Login Successful",
+				Msg:  "registration successful",
 			},
 			Data: map[string]any{
 				"access_token":  accessToken,
@@ -119,7 +123,7 @@ func (*AuthController) Register(c *gin.Context) {
 	c.JSON(http.StatusCreated, types.Response{
 		Status: types.Status{
 			Code: http.StatusCreated,
-			Msg:  "Login Successful",
+			Msg:  "registration successful",
 		},
 	})
 }
@@ -153,13 +157,17 @@ func (*AuthController) Login(c *gin.Context) {
 
 	// Bind the form data to the Login struct and check for errors in the process.
 	if err := c.ShouldBindJSON(&login); err != nil {
+		notjsonValidity := isJSONValid(err, c)
+		if notjsonValidity {
+			return
+		}
 		c.JSON(http.StatusBadRequest, types.Response{
 			Status: types.Status{
 				Code: http.StatusBadRequest,
 				Msg:  validator(customizer, err),
 			},
 		})
-		return
+
 	}
 
 	// The `loginValidation` function is used to check if the required fields for login are provided and
@@ -178,7 +186,7 @@ func (*AuthController) Login(c *gin.Context) {
 		c.JSON(http.StatusNotFound, types.Response{
 			Status: types.Status{
 				Code: http.StatusNotFound,
-				Msg:  "User not found",
+				Msg:  "user not found",
 			},
 		})
 		return
@@ -190,7 +198,7 @@ func (*AuthController) Login(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, types.Response{
 			Status: types.Status{
 				Code: http.StatusUnauthorized,
-				Msg:  "Invalid Password",
+				Msg:  "invalid Password",
 			},
 		})
 		return
@@ -210,7 +218,7 @@ func (*AuthController) Login(c *gin.Context) {
 		c.JSON(http.StatusOK, types.Response{
 			Status: types.Status{
 				Code: http.StatusOK,
-				Msg:  "Login Successful",
+				Msg:  "login successful",
 			},
 			Data: map[string]any{
 				"access_token":  accessToken,
@@ -230,7 +238,7 @@ func (*AuthController) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, types.Response{
 		Status: types.Status{
 			Code: http.StatusOK,
-			Msg:  "Login Successful",
+			Msg:  "login successful",
 		},
 	})
 
@@ -253,7 +261,7 @@ func (*AuthController) Logout(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.Response{
 			Status: types.Status{
 				Code: http.StatusBadRequest,
-				Msg:  "No token provided (i.e. you are not logged in).",
+				Msg:  "no token provided (i.e. you are not logged in).",
 			}})
 		return
 	}
@@ -270,7 +278,7 @@ func (*AuthController) Logout(c *gin.Context) {
 	c.JSON(http.StatusOK, types.Response{
 		Status: types.Status{
 			Code: http.StatusOK,
-			Msg:  "Logout Successful",
+			Msg:  "logout Successful",
 		},
 	})
 
@@ -296,6 +304,10 @@ func (*AuthController) RefreshToken(c *gin.Context) {
 
 	// Bind the form data to the RefreshToken struct and check for errors in the process.
 	if err := c.ShouldBindJSON(&tokens); err != nil {
+		notjsonValidity := isJSONValid(err, c)
+		if notjsonValidity {
+			return
+		}
 		c.JSON(http.StatusBadRequest, types.Response{
 			Status: types.Status{
 				Code: http.StatusBadRequest,
@@ -323,7 +335,7 @@ func (*AuthController) RefreshToken(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.Response{
 			Status: types.Status{
 				Code: http.StatusBadRequest,
-				Msg:  "Token Expired",
+				Msg:  "token expired",
 			},
 		})
 		return
@@ -335,7 +347,7 @@ func (*AuthController) RefreshToken(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, types.Response{
 			Status: types.Status{
 				Code: http.StatusUnauthorized,
-				Msg:  "Unauthorized",
+				Msg:  "unauthorized",
 			},
 		})
 		return
@@ -351,7 +363,7 @@ func (*AuthController) RefreshToken(c *gin.Context) {
 	c.JSON(http.StatusOK, types.Response{
 		Status: types.Status{
 			Code: http.StatusOK,
-			Msg:  "Token Refreshed",
+			Msg:  "token refreshed",
 		},
 		Data: map[string]any{
 			"access_token": accessToken,
@@ -373,7 +385,7 @@ func (*AuthController) IsLoggedIn(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.Response{
 			Status: types.Status{
 				Code: http.StatusBadRequest,
-				Msg:  "No token provided (i.e. you are not logged in).",
+				Msg:  "no token provided (i.e. you are not logged in).",
 			}})
 		return
 	}
@@ -385,7 +397,7 @@ func (*AuthController) IsLoggedIn(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, types.Response{
 			Status: types.Status{
 				Code: http.StatusBadRequest,
-				Msg:  "Token Expired or Revoked",
+				Msg:  "token expired or revoked",
 			},
 		})
 		return
@@ -396,7 +408,7 @@ func (*AuthController) IsLoggedIn(c *gin.Context) {
 	c.JSON(http.StatusOK, types.Response{
 		Status: types.Status{
 			Code: http.StatusOK,
-			Msg:  "Logged In",
+			Msg:  "logged In",
 		},
 	})
 }
@@ -490,7 +502,7 @@ func loginValidation(c *gin.Context, login types.Login) bool {
 		c.JSON(http.StatusUnprocessableEntity, types.Response{
 			Status: types.Status{
 				Code: http.StatusUnprocessableEntity,
-				Msg:  "Username or Email is required",
+				Msg:  "username or email is required",
 			},
 		})
 		return true
@@ -503,7 +515,7 @@ func loginValidation(c *gin.Context, login types.Login) bool {
 		c.JSON(http.StatusUnprocessableEntity, types.Response{
 			Status: types.Status{
 				Code: http.StatusUnprocessableEntity,
-				Msg:  "Only Username or Email is required",
+				Msg:  "only username or email is required",
 			},
 		})
 		return true
@@ -516,7 +528,7 @@ func loginValidation(c *gin.Context, login types.Login) bool {
 		c.JSON(http.StatusUnprocessableEntity, types.Response{
 			Status: types.Status{
 				Code: http.StatusUnprocessableEntity,
-				Msg:  "Only Username or Email is required",
+				Msg:  "only username or email and password is required",
 			},
 		})
 		return true
@@ -561,4 +573,19 @@ func validator(customizer galidator.Validator, err error) string {
 func setTokenInCookies(c *gin.Context, accessToken string, refreshToken string) {
 	c.SetCookie("__t", accessToken, 300, "/", "localhost", true, true)
 	c.SetCookie("__rt", refreshToken, 86400, "/", "localhost", true, true)
+}
+
+// The function checks if an error message indicates an invalid JSON object and returns a JSON response
+// with an error message if it is.
+func isJSONValid(err error, c *gin.Context) bool {
+	if strings.Split(err.Error(), ":")[0] == "types.Login.readFieldHash" {
+		c.JSON(http.StatusBadRequest, types.Response{
+			Status: types.Status{
+				Code: http.StatusBadRequest,
+				Msg:  "please provide a valid json object",
+			},
+		})
+		return true
+	}
+	return false
 }

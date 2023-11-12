@@ -112,7 +112,7 @@ func IsTokenRevoked(accessToken string, refreshToken string, c *gin.Context, ref
 			c.JSON(http.StatusUnauthorized, types.Response{
 				Status: types.Status{
 					Code: http.StatusUnauthorized,
-					Msg:  "Any of the Token's Have been Revoked",
+					Msg:  "any of the token's have been revoked",
 				},
 			})
 			return true
@@ -127,7 +127,7 @@ func IsTokenRevoked(accessToken string, refreshToken string, c *gin.Context, ref
 		c.JSON(http.StatusUnauthorized, types.Response{
 			Status: types.Status{
 				Code: http.StatusUnauthorized,
-				Msg:  "Access Token has been Revoked",
+				Msg:  "access token has been revoked",
 			},
 		})
 		return true

@@ -95,7 +95,7 @@ func JWTAuthMiddleWare() gin.HandlerFunc {
 			c.JSON(http.StatusUnauthorized, types.Response{
 				Status: types.Status{
 					Code: http.StatusUnauthorized,
-					Msg:  "Unauthorized",
+					Msg:  "unauthorized",
 				},
 			})
 			c.Abort()
@@ -110,7 +110,7 @@ func JWTAuthMiddleWare() gin.HandlerFunc {
 			c.JSON(http.StatusUnauthorized, types.Response{
 				Status: types.Status{
 					Code: http.StatusUnauthorized,
-					Msg:  "Unauthorized",
+					Msg:  "unauthorized",
 				},
 			})
 			c.Abort()
@@ -135,7 +135,7 @@ func JWTAuthMiddleWare() gin.HandlerFunc {
 			c.JSON(http.StatusUnauthorized, types.Response{
 				Status: types.Status{
 					Code: http.StatusUnauthorized,
-					Msg:  "Unauthorized",
+					Msg:  "unauthorized",
 				},
 			})
 			c.Abort()
@@ -170,7 +170,7 @@ func InvalidToken(c *gin.Context) {
 	c.JSON(http.StatusUnauthorized, types.Response{
 		Status: types.Status{
 			Code: http.StatusUnauthorized,
-			Msg:  "Invalid Token",
+			Msg:  "invalid token",
 		},
 	})
 	c.Abort()

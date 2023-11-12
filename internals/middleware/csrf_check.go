@@ -33,7 +33,7 @@ func parseCSRFMiddleware(middleware func(http.Handler) http.Handler) gin.Handler
 			c.AbortWithStatusJSON(http.StatusForbidden, types.Response{
 				Status: types.Status{
 					Code: http.StatusForbidden,
-					Msg:  "Forbidden",
+					Msg:  "forbidden",
 				},
 			})
 			return

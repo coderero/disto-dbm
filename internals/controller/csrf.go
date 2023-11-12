@@ -18,7 +18,7 @@ func (CSRFController) GenerateCsrfToken(c *gin.Context) {
 	c.JSON(http.StatusOK, types.Response{
 		Status: types.Status{
 			Code: http.StatusOK,
-			Msg:  "OK",
+			Msg:  "ok",
 		},
 		Data: map[string]interface{}{
 			"csrf_token": token,

@@ -12,7 +12,7 @@ type SignUp struct {
 
 // The Login struct is used to bind the request body form to the struct.
 type Login struct {
-	Username string `json:"username" form:"username"`
-	Email    string `json:"email" form:"email"`
-	Password string `json:"password" form:"password"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Password string `json:"password" binding:"required"`
 }
