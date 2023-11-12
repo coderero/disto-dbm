@@ -210,10 +210,7 @@ func (*AuthController) Login(c *gin.Context) {
 			Status: types.Status{
 				Code: http.StatusBadRequest,
 				Msg:  "you have provided an invalid json",
-			},
-			Data: map[string]any{
-				"error": err.Error()},
-		})
+			}})
 		return
 	}
 
