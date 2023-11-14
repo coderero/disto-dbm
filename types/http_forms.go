@@ -1,18 +1,18 @@
 package types
 
 // The SignUp struct is used to bind the request body form to the struct.
-type SignUp struct {
-	Username  string `json:"username" form:"username" binding:"required,min=4,max=32"`
-	Email     string `json:"email" form:"email" binding:"required,email"`
-	Password  string `json:"password" form:"password" binding:"required,min=8,max=32"`
-	FirstName string `json:"first_name" form:"first_name" binding:"required,min=4,max=32"`
-	LastName  string `json:"last_name" form:"last_name" binding:"required,min=4,max=32"`
-	Age       int    `json:"age" form:"age" binding:"required,min=1"`
+type Register struct {
+	Username  string `json:"username" validate:"required,min=3,max=32,alphanum"`
+	Email     string `json:"email" validate:"required,email"`
+	Password  string `json:"password" validate:"required,min=8"`
+	FirstName string `json:"first_name" validate:"required,alpha"`
+	LastName  string `json:"last_name" validate:"required,alpha"`
+	Age       int    `json:"age" validate:"required,gt=0,lt=100"`
 }
 
 // The Login struct is used to bind the request body form to the struct.
 type Login struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password" binding:"required"`
+	Username string `json:"username" validate:"omitempty,alphanum"`
+	Email    string `json:"email" validate:"omitempty,email"`
+	Password string `json:"password" validate:"required,min=8"`
 }
