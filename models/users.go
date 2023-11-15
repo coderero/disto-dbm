@@ -121,9 +121,6 @@ func (u *User) DeleteByEmail(email string) error {
 	if model.Error != nil {
 		return model.Error
 	}
-	if user.DeletedAt.Valid {
-		return errors.New("user not found")
-	}
-	model.Delete(u)
+	model.Unscoped().Delete(u)
 	return nil
 }
