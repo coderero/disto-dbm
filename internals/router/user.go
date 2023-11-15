@@ -19,5 +19,6 @@ func userRouter(group *gin.RouterGroup) {
 	{
 		group.PATCH("/user", user.UpdateUser)
 		group.DELETE("/user", user.DeleteUser)
+		group.GET("/user", user.GetUser)
 	}
 }
