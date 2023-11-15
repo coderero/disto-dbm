@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -54,6 +55,7 @@ func JWTAuthMiddleWare() gin.HandlerFunc {
 			// Check if the token is valid
 			if jwtToken.Valid {
 				c.Next()
+				return
 			} else {
 				InvalidToken(c)
 				return
@@ -121,13 +123,40 @@ func JWTAuthMiddleWare() gin.HandlerFunc {
 		// it calls the `c.Next()` function to pass the request to the next middleware function.
 		if !security.IsTokenExpired(accessToken) {
 			c.Next()
+			return
 		}
 
 		// If the access token is expired but the refresh token is not expired, generate a new access token and set it as a cookie
 		if security.IsTokenExpired(accessToken) && !security.IsTokenExpired(refreshToken) {
-			newAccessToken := security.GenerateToken(accessToken, security.AcessTokenExpireTime)
+			// Get Subject from the access token
+			claims, err := security.VerifyToken(refreshToken)
+			if err != nil {
+				c.JSON(http.StatusUnauthorized, types.Response{
+					Status: types.Status{
+						Code: http.StatusUnauthorized,
+						Msg:  "unauthorized",
+					},
+				})
+				c.Abort()
+				return
+			}
+
+			subject, err := claims.Claims.GetSubject()
+			if err != nil {
+				c.JSON(http.StatusUnauthorized, types.Response{
+					Status: types.Status{
+						Code: http.StatusUnauthorized,
+						Msg:  "unauthorized",
+					},
+				})
+				c.Abort()
+				return
+			}
+			fmt.Println(subject)
+			newAccessToken := security.GenerateToken(subject, security.AcessTokenExpireTime)
 			c.SetCookie("__t", newAccessToken, 3600, "/", "localhost", false, true)
 			c.Next()
+			return
 		}
 
 		// If both the access token and refresh token are expired, return an error

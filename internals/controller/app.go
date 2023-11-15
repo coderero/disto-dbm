@@ -17,7 +17,7 @@ func (*AppController) Home(c *gin.Context) {
 			Code: http.StatusOK,
 			Msg:  "ok",
 		},
-		Data: map[string]interface{}{
-			"message": "Hello World!",
+		Data: []map[string]any{
+			{"message": "Hello, World!"},
 		}})
 }

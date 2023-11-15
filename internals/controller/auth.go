@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -27,7 +27,7 @@ var (
 
 // The `register` function is a method of the `AuthController` struct. It handles the registration
 // process for a user.
-func (*AuthController) Register(c *gin.Context) {
+func (AuthController) Register(c *gin.Context) {
 	// The code snippet is handling the registration process for a user.
 	var register types.Register
 
@@ -43,23 +43,9 @@ func (*AuthController) Register(c *gin.Context) {
 	// the request header or cookies. If they are present, they are revoked.
 	previousTokens(c)
 
-	// The `Validator` function is used to validate the form data. It takes in the form data and a custom
-	// error message as parameters.
-	customizer := gal.Validator(register, galidator.Messages{
-		"required": "$field is required",
-		"email":    "$field must be a valid email address",
-		"min":      "$field is too short, required minimum length is 3",
-		"max":      "$field is too long, required maximum length is 32",
-		"alphanum": "$field must be alphanumeric",
-		"gt":       "$field must be greater than 0",
-		"lt":       "$field must be less than 100",
-		"alpha":    "$field must be alphabetic",
-		"numeric":  "$field must be numeric",
-	})
-
 	// The `decodeJson` function is used to decode the request body into the `Register` struct and check
 	// for any possible errors in the process.
-	isJsonDecoded := decodeJson(c, &register)
+	isJsonDecoded := utils.DecodeJson(c, &register)
 	if isJsonDecoded {
 		return
 	}
@@ -71,21 +57,19 @@ func (*AuthController) Register(c *gin.Context) {
 				Code: http.StatusBadRequest,
 				Msg:  "validation error",
 			},
-			Data: map[string]any{
-				"errors": customizer.DecryptErrors(err),
-			},
+			Errors: utils.ConvertValidationErrors(err),
 		})
 		return
 	}
 
 	// The `loginValidation` function is used to check if the required fields for login are provided and
 	// returns true if there are any errors.
-	err3 := models.User{}.CheckForUser(register.Username, register.Email)
+	err3, msg := models.User{}.CheckForUser(register.Username, register.Email)
 	if err3 {
 		c.JSON(http.StatusConflict, types.Response{
 			Status: types.Status{
 				Code: http.StatusConflict,
-				Msg:  "user already exists",
+				Msg:  fmt.Sprintf("user with that '%s' already exists", msg),
 			},
 		})
 		return
@@ -121,9 +105,9 @@ func (*AuthController) Register(c *gin.Context) {
 				Code: http.StatusCreated,
 				Msg:  "registration successful",
 			},
-			Data: map[string]any{
+			Data: []map[string]any{{
 				"access_token":  accessToken,
-				"refresh_token": refreshToken,
+				"refresh_token": refreshToken},
 			},
 		})
 		return
@@ -146,7 +130,7 @@ func (*AuthController) Register(c *gin.Context) {
 
 // The `Login` function is a method of the `AuthController` struct. It handles the login process for a
 // user.
-func (*AuthController) Login(c *gin.Context) {
+func (AuthController) Login(c *gin.Context) {
 	// The code snippet is handling the login process for a user.
 	var login types.Login
 
@@ -163,18 +147,9 @@ func (*AuthController) Login(c *gin.Context) {
 	// the request header or cookies. If they are present, they are revoked.
 	previousTokens(c)
 
-	// The `Validator` function is used to validate the form data. It takes in the form data and a custom
-	// error message as parameters.
-	customizer := gal.Validator(login, galidator.Messages{
-		"required": "$field is required",
-		"email":    "$field must be a valid email address",
-		"min":      "$field is of wrong length or too short",
-		"alphanum": "$field must be alphanumeric",
-	})
-
 	// The `decodeJson` function is used to decode the request body into the `Register` struct and check
 	// for any possible errors in the process.
-	isJsonDecoded := decodeJson(c, &login)
+	isJsonDecoded := utils.DecodeJson(c, &login)
 	if isJsonDecoded {
 		return
 	}
@@ -186,9 +161,7 @@ func (*AuthController) Login(c *gin.Context) {
 				Code: http.StatusBadRequest,
 				Msg:  "validation error",
 			},
-			Data: map[string]any{
-				"errors": customizer.DecryptErrors(err),
-			},
+			Errors: utils.ConvertValidationErrors(err),
 		})
 		return
 	}
@@ -204,7 +177,7 @@ func (*AuthController) Login(c *gin.Context) {
 
 	// The `GetUserForLogin` function is used to get the user object for the user trying to login. It takes
 	// in the username or email of the user as parameters.
-	registeredObj := user.GetUserForLogin(login.Username, login.Email)
+	registeredObj := user.GetUser(login.Username, login.Email)
 	if registeredObj.ID == 0 {
 		c.JSON(http.StatusNotFound, types.Response{
 			Status: types.Status{
@@ -243,9 +216,9 @@ func (*AuthController) Login(c *gin.Context) {
 				Code: http.StatusOK,
 				Msg:  "login successful",
 			},
-			Data: map[string]any{
+			Data: []map[string]any{{
 				"access_token":  accessToken,
-				"refresh_token": refreshToken,
+				"refresh_token": refreshToken},
 			},
 		})
 		return
@@ -269,7 +242,7 @@ func (*AuthController) Login(c *gin.Context) {
 
 // The `Logout` function is a method of the `AuthController` struct. It handles the logout process for
 // a user.
-func (*AuthController) Logout(c *gin.Context) {
+func (AuthController) Logout(c *gin.Context) {
 	// The `token` variable is used to get the access token from the request header.
 	token := c.Request.Header.Get("Authorization")
 
@@ -309,7 +282,7 @@ func (*AuthController) Logout(c *gin.Context) {
 
 // The `RefreshToken` function is a method of the `AuthController` struct. It handles the process of
 // refreshing an access token using a refresh token.
-func (*AuthController) RefreshToken(c *gin.Context) {
+func (AuthController) RefreshToken(c *gin.Context) {
 	// The `tokens` variable is Initialize a new `RefreshToken` struct to store the refresh token and access
 	// token provided by the user.
 	var tokens types.RefreshToken
@@ -319,15 +292,9 @@ func (*AuthController) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	// The `Validator` function is used to validate the form data. It takes in the form data and a custom
-	// error message as parameters.
-	customizer := gal.Validator(tokens, galidator.Messages{
-		"required": "$field is required",
-	})
-
 	// The `decodeJson` function is used to decode the request body into the `Register` struct and check
 	// for any possible errors in the process.
-	isJsonDecoded := decodeJson(c, &tokens)
+	isJsonDecoded := utils.DecodeJson(c, &tokens)
 	if isJsonDecoded {
 		return
 	}
@@ -339,9 +306,7 @@ func (*AuthController) RefreshToken(c *gin.Context) {
 				Code: http.StatusBadRequest,
 				Msg:  "validation error",
 			},
-			Data: map[string]any{
-				"errors": customizer.DecryptErrors(err),
-			},
+			Errors: utils.ConvertValidationErrors(err),
 		})
 		return
 	}
@@ -394,13 +359,13 @@ func (*AuthController) RefreshToken(c *gin.Context) {
 			Code: http.StatusOK,
 			Msg:  "token refreshed",
 		},
-		Data: map[string]any{
-			"access_token": accessToken,
+		Data: []map[string]any{{
+			"access_token": accessToken},
 		},
 	})
 }
 
-func (*AuthController) IsLoggedIn(c *gin.Context) {
+func (AuthController) IsLoggedIn(c *gin.Context) {
 	// The `token` variable is used to get the access token from the request header.
 	token := c.Request.Header.Get("Authorization")
 
@@ -558,36 +523,4 @@ func loginValidation(c *gin.Context, login types.Login) bool {
 func setTokenInCookies(c *gin.Context, accessToken string, refreshToken string) {
 	c.SetCookie("__t", accessToken, 300, "/", "localhost", true, true)
 	c.SetCookie("__rt", refreshToken, 86400, "/", "localhost", true, true)
-}
-
-type intOrString interface {
-	int | string
-}
-
-// The function `decodeJson` decodes a JSON request body into a given model, handles any decoding or
-// validation errors, and returns a boolean indicating whether an error occurred.
-// NOTE: Although Gin has a built-in JSON decoder, but it is not as flexible to decode JSON request
-// body into a given model and handle any decoding or validation errors.
-func decodeJson(c *gin.Context, model interface{}) bool {
-	// The code below is decoding the request body into the model provided and checking for any errors in
-	// the process.
-	if err := json.NewDecoder(c.Request.Body).Decode(model); err != nil {
-		if strings.Contains(err.Error(), "json:") {
-			c.JSON(http.StatusBadRequest, types.Response{
-				Status: types.Status{
-					Code: http.StatusBadRequest,
-					Msg:  utils.ExtractInformation(err),
-				},
-			})
-			return true
-		}
-		c.JSON(http.StatusBadRequest, types.Response{
-			Status: types.Status{
-				Code: http.StatusBadRequest,
-				Msg:  err.Error(),
-			},
-		})
-		return true
-	}
-	return false
 }

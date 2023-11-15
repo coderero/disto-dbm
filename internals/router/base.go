@@ -25,7 +25,6 @@ func Router() *gin.Engine {
 	r.Use(middleware.RateLimitHandler(1000, time.Minute))
 	r.Use(middleware.RateLimitHandler(100, time.Second))
 	r.Use(cors.New(cors.Config{
-		// ! Change this to the domain of your frontend or fetch the domains from redis cache
 		AllowOrigins: strings.Split(os.Getenv("ALLOWED_ORIGINS"), ","),
 		AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE"},
 
@@ -44,6 +43,7 @@ func Router() *gin.Engine {
 	authRouter(sub)
 	csrfRouter(sub)
 	appRouter(sub)
+	userRouter(sub)
 
 	return r
 }

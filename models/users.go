@@ -49,64 +49,81 @@ func (u *User) Create() *User {
 
 // The `CheckForUser` method is used to check if a user with the given username or email already
 // exists in the database.
-func (u User) CheckForUser(username string, email string) bool {
+func (u User) CheckForUser(username string, email string) (bool, string) {
 	var check User
-	db.Model(&u).Where("username = ? OR email = ?", username, email).First(&check)
+	db.Model(&u).Where("username = ?", username).First(&check)
 	if check.ID != 0 {
-		return true
+		return true, "username"
 	}
-	return false
+	db.Model(&u).Where("email = ?", email).First(&check)
+	if check.ID != 0 {
+		return true, "email"
+	}
+	return false, ""
 }
 
 // The `GetUserForLogin` method is used to retrieve a user record from the database based on the
 // provided username or email. It takes the username and email as parameters and returns a pointer to
 // the retrieved user (`*User`).
-func (u *User) GetUserForLogin(username, email string) *User {
-	db.Model(&u).Raw("SELECT * FROM users WHERE username = ? OR email = ?", username, email).First(&u)
+func (u *User) GetUser(username, email string) *User {
+	db.Model(u).Where("username = ? OR email = ?", username, email).First(&u)
 	return u
 }
 
 // The `GetUserById` method is used to retrieve a user record from the database based on the provided
 // user ID. It takes the user ID as a parameter and returns a pointer to the retrieved user (`*User`).
 func (u *User) GetUserById(id int) *User {
-	db.Model(&u).Where("id = ?", id).First(&u)
+	db.Model(u).Where("id = ?", id).First(&u)
 	return u
 }
 
 // The `GetUserByEmail` method is used to retrieve a user record from the database based on the
 // provided email. It takes the email as a parameter and returns a pointer to the retrieved user
 // (`*User`).
-func (u *User) GetUserByEmail(email string) *User {
-	db.Model(&u).Where("email = ?", email).First(&u)
-	return u
+func (u *User) GetUserByEmail(email string) error {
+	m := db.Model(u).Where("email = ?", email).First(&u)
+	return m.Error
 }
 
 // The `GetUserByUsername` method is used to retrieve a user record from the database based on the
 // provided username. It takes the username as a parameter and returns a pointer to the retrieved user
 // (`*User`).
 func (u *User) GetUserByUsername(username string) *User {
-	db.Model(&u).Where("username = ?", username).First(&u)
+	db.Model(u).Where("username = ?", username).First(&u)
 	return u
 }
 
 // The `Update` method is a method defined on the `User` struct. It is used to update a user record in
 // the database based on the provided user ID.
 func (u *User) Update(id int) (*User, error) {
-	if b, err := checkForId(id); b {
+	if b, err := checkForId(int(u.ID)); b {
 		return nil, err
 	}
 
-	db.Model(&u).Where("id = ?", id).Updates(&u)
+	db.Model(u).Where("id = ?", id).Updates(&u)
 	return u, nil
 }
 
 // The `Delete` method is a method defined on the `User` struct. It is used to delete a user record
 // from the database based on the provided user ID.
 func (u *User) Delete(id int) error {
-	if b, err := checkForId(id); b {
+	if b, err := checkForId(int(u.ID)); b {
 		return err
 	}
 
-	db.Model(&u).Where("id = ?", id).Delete(&u)
+	db.Model(u).Where("id = ?", id).Delete(&u)
+	return nil
+}
+
+func (u *User) DeleteByEmail(email string) error {
+	var user User
+	model := db.Model(&u).Raw("SELECT * FROM users WHERE email = ?", email).Scan(&user)
+	if model.Error != nil {
+		return model.Error
+	}
+	if user.DeletedAt.Valid {
+		return errors.New("user not found")
+	}
+	model.Delete(u)
 	return nil
 }
