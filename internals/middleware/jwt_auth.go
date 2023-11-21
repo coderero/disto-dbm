@@ -1,10 +1,11 @@
 package middleware
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
+	"coderero.dev/projects/go/gin/hello/cache"
+	"coderero.dev/projects/go/gin/hello/models"
 	"coderero.dev/projects/go/gin/hello/pkg/security"
 	types "coderero.dev/projects/go/gin/hello/types"
 	"github.com/gin-gonic/gin"
@@ -48,8 +49,23 @@ func JWTAuthMiddleWare() gin.HandlerFunc {
 
 			jwtToken, err := security.VerifyToken(typeOfToken[1])
 
+			sub, subErr := jwtToken.Claims.GetSubject()
+			if subErr != nil {
+				c.JSON(http.StatusUnauthorized, types.Response{
+					Status: types.Status{
+						Code: http.StatusUnauthorized,
+						Msg:  "unauthorized",
+					},
+				})
+				return
+			}
+
 			if err != nil {
 				InvalidToken(c)
+				return
+			}
+			shouldReturn := checkUser(sub, c)
+			if shouldReturn {
 				return
 			}
 			// Check if the token is valid
@@ -107,21 +123,14 @@ func JWTAuthMiddleWare() gin.HandlerFunc {
 		// The code block is calling the `checkTokenRevoketion` function with the `accessToken`,
 		// `refreshToken`, and `c` (gin.Context) as arguments. The function checks if the tokens have been
 		// revoked based on the provided access token and refresh token.
-		haveErr := checkTokenRevoketion(accessToken, refreshToken, c)
-		if haveErr {
-			c.JSON(http.StatusUnauthorized, types.Response{
-				Status: types.Status{
-					Code: http.StatusUnauthorized,
-					Msg:  "unauthorized",
-				},
-			})
-			c.Abort()
+		shouldReturn := checkTokenRevoketion(accessToken, refreshToken, c)
+		if shouldReturn {
 			return
 		}
 
 		// The code block is checking if the access token is not expired. If the access token is not expired,
 		// it calls the `c.Next()` function to pass the request to the next middleware function.
-		if !security.IsTokenExpired(accessToken) {
+		if !security.IsTokenExpired(accessToken) && !cache.IsTokenRevoked(accessToken) {
 			c.Next()
 			return
 		}
@@ -152,7 +161,10 @@ func JWTAuthMiddleWare() gin.HandlerFunc {
 				c.Abort()
 				return
 			}
-			fmt.Println(subject)
+			shouldReturn := checkUser(subject, c)
+			if shouldReturn {
+				return
+			}
 			newAccessToken := security.GenerateToken(subject, security.AcessTokenExpireTime)
 			c.SetCookie("__t", newAccessToken, 3600, "/", "localhost", false, true)
 			c.Next()
@@ -173,6 +185,28 @@ func JWTAuthMiddleWare() gin.HandlerFunc {
 
 	}
 
+}
+
+func checkUser(sub string, c *gin.Context) bool {
+	var user *models.User
+	userErr := user.GetUserByEmail(sub)
+	if userErr != nil {
+		c.JSON(http.StatusNotFound, types.Response{
+			Status: types.Status{
+				Code: http.StatusNotFound,
+				Msg:  "the logged in user not found",
+			},
+		})
+		token := c.Request.Header.Get("Authorization")
+		if token != "" {
+			accessToken := strings.Split(token, " ")[1]
+			cache.RevokeToken(accessToken)
+		}
+		c.SetCookie("__t", "", -1, "/", "localhost", true, true)
+		c.SetCookie("__rt", "", -1, "/", "localhost", true, true)
+		return true
+	}
+	return false
 }
 
 // The function checks if a token has been revoked based on the provided access token and refresh

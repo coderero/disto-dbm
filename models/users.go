@@ -19,7 +19,7 @@ func init() {
 
 // The User struct defines the structure of a user record in the database.
 type User struct {
-	ID        uint           `json:"id" gorm:"primarykey"`
+	ID        uint           `json:"-" gorm:"primarykey"`
 	Username  string         `json:"username,omitempty" gorm:"unique;not null"`
 	Email     string         `json:"email,omitempty" gorm:"unique;not null"`
 	Password  string         `json:"-" gorm:"not null"`
@@ -66,14 +66,27 @@ func (u User) CheckForUser(username string, email string) (bool, string) {
 // provided username or email. It takes the username and email as parameters and returns a pointer to
 // the retrieved user (`*User`).
 func (u *User) GetUser(username, email string) *User {
-	db.Model(u).Where("username = ? OR email = ?", username, email).First(&u)
+	db.Model(&u).Where("username = ? OR email = ?", username, email).First(&u)
+	return u
+}
+
+func (u *User) Save() *User {
+	db.Model(&u).Save(&u)
+	return u
+}
+
+// The `GetUserForLogin` method is used to retrieve a user record from the database based on the
+// provided username or email. It takes the username and email as parameters and returns a pointer to
+// the retrieved user (`*User`).
+func (u *User) GetUserRaw(username, email string) *User {
+	db.Model(&u).Raw("SELECT * FROM users WHERE username = ? OR email = ?", username, email).Scan(&u)
 	return u
 }
 
 // The `GetUserById` method is used to retrieve a user record from the database based on the provided
 // user ID. It takes the user ID as a parameter and returns a pointer to the retrieved user (`*User`).
 func (u *User) GetUserById(id int) *User {
-	db.Model(u).Where("id = ?", id).First(&u)
+	db.Model(&u).Where("id = ?", id).First(&u)
 	return u
 }
 
@@ -81,16 +94,16 @@ func (u *User) GetUserById(id int) *User {
 // provided email. It takes the email as a parameter and returns a pointer to the retrieved user
 // (`*User`).
 func (u *User) GetUserByEmail(email string) error {
-	m := db.Model(u).Where("email = ?", email).First(&u)
+	m := db.Model(&u).Where("email = ?", email).First(&u)
 	return m.Error
 }
 
 // The `GetUserByUsername` method is used to retrieve a user record from the database based on the
 // provided username. It takes the username as a parameter and returns a pointer to the retrieved user
 // (`*User`).
-func (u *User) GetUserByUsername(username string) *User {
-	db.Model(u).Where("username = ?", username).First(&u)
-	return u
+func (u *User) GetUserByUsername(username string) error {
+	err := db.Model(&u).Where("username = ?", username).First(&u).Error
+	return err
 }
 
 // The `Update` method is a method defined on the `User` struct. It is used to update a user record in
@@ -100,7 +113,7 @@ func (u *User) Update(id int) (*User, error) {
 		return nil, err
 	}
 
-	db.Model(u).Where("id = ?", id).Updates(&u)
+	db.Model(&u).Where("id = ?", id).Updates(&u)
 	return u, nil
 }
 
@@ -111,7 +124,7 @@ func (u *User) Delete(id int) error {
 		return err
 	}
 
-	db.Model(u).Where("id = ?", id).Delete(&u)
+	db.Model(&u).Where("id = ?", id).Unscoped().Delete(&u)
 	return nil
 }
 

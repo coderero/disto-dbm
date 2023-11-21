@@ -43,6 +43,7 @@ func Router() *gin.Engine {
 	authRouter(sub)
 	csrfRouter(sub)
 	appRouter(sub)
+	userRouter(sub)
 
 	return r
 }

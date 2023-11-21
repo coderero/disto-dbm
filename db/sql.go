@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"sync"
 
@@ -38,7 +39,8 @@ func init() {
 			SkipDefaultTransaction: true,
 		})
 		if err != nil {
-			panic("failed to connect database")
+			log.Fatal(err)
+			os.Exit(1)
 		}
 		db = db_local
 	})

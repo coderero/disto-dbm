@@ -3,6 +3,7 @@ package cache
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -24,6 +25,7 @@ func init() {
 		DB:       0,
 	})
 	if err := client.Ping(context.Background()).Err(); err != nil {
-		panic("failed to connect to cache server")
+		log.Fatal(err)
+		os.Exit(1)
 	}
 }

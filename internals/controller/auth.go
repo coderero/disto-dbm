@@ -105,11 +105,10 @@ func (AuthController) Register(c *gin.Context) {
 				Code: http.StatusCreated,
 				Msg:  "registration successful",
 			},
-			Data: []map[string]any{{
+			Data: map[string]any{
 				"access_token":  accessToken,
-				"refresh_token": refreshToken},
-			},
-		})
+				"refresh_token": refreshToken,
+			}})
 		return
 	}
 
@@ -350,6 +349,18 @@ func (AuthController) RefreshToken(c *gin.Context) {
 	// The `sub` variable is used to get the subject from the claims.
 	sub, _ := claims.Claims.GetSubject()
 
+	var user *models.User
+	err = user.GetUserByEmail(sub)
+	if err != nil {
+		c.JSON(http.StatusNotFound, types.Response{
+			Status: types.Status{
+				Code: http.StatusNotFound,
+				Msg:  "user not found",
+			},
+		})
+		return
+	}
+
 	// The `GenerateToken` function is used to generate a new access token for the user.
 	accessToken = security.GenerateToken(sub, time.Now().Add(time.Minute*5))
 
@@ -359,8 +370,8 @@ func (AuthController) RefreshToken(c *gin.Context) {
 			Code: http.StatusOK,
 			Msg:  "token refreshed",
 		},
-		Data: []map[string]any{{
-			"access_token": accessToken},
+		Data: map[string]any{
+			"access_token": accessToken,
 		},
 	})
 }
