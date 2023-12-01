@@ -20,8 +20,8 @@ type passwordParams struct {
 
 var nilString = ""
 
-var saltLength = 32
-var DefaultPasswordParams = passwordParams{R: 8, N: 15, s: 43}
+var saltLength = 22
+var DefaultPasswordParams = passwordParams{R: 8, N: 14, s: 43}
 
 var MisMatchedError = fmt.Errorf("pass: provided password does not match the actual password")
 
@@ -31,7 +31,7 @@ func CreatePassword(password string) (string, error) {
 		return nilString, err
 	}
 
-	dk, err := scrypt.Key([]byte(password), salt, 1<<uint(DefaultPasswordParams.N), DefaultPasswordParams.R, 1, 32)
+	dk, err := scrypt.Key([]byte(password), salt, 1<<uint(DefaultPasswordParams.N), DefaultPasswordParams.R, 1, 16)
 	if err != nil {
 		return nilString, err
 	}
@@ -58,7 +58,7 @@ func ComparePassword(password string, hash string) error {
 		return saltErr
 	}
 
-	dk, dkErr := scrypt.Key([]byte(password), salt, 1<<uint(params.N), params.R, 1, 32)
+	dk, dkErr := scrypt.Key([]byte(password), salt, 1<<uint(params.N), params.R, 1, 16)
 	if dkErr != nil {
 		return dkErr
 	}
