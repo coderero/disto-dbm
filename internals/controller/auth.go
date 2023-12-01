@@ -183,6 +183,16 @@ func (AuthController) Login(c *gin.Context) {
 				Code: http.StatusNotFound,
 				Msg:  "user not found",
 			},
+			Errors: []types.APIError{
+				{
+					Field:   "username",
+					Message: "user does not exist",
+				},
+				{
+					Field:   "email",
+					Message: "user does not exist",
+				},
+			},
 		})
 		return
 	}

@@ -1,6 +1,7 @@
 package router
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -9,7 +10,12 @@ import (
 	"coderero.dev/projects/go/gin/hello/internals/middleware"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
+
+func init() {
+	godotenv.Load()
+}
 
 // The function `Router` returns a Gin router with a sub-router for handling authentication routes.
 func Router() *gin.Engine {
@@ -26,12 +32,13 @@ func Router() *gin.Engine {
 	r.Use(middleware.RateLimitHandler(100, time.Second))
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: strings.Split(os.Getenv("ALLOWED_ORIGINS"), ","),
-		AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE"},
 
 		AllowHeaders:     []string{"Origin", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
+
+	fmt.Println(strings.Split(os.Getenv("ALLOWED_ORIGINS"), ","))
 
 	// Sub-Routers
 	sub := r.Group("/api/v1")

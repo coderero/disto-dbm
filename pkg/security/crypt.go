@@ -1,24 +1,24 @@
 package security
 
 import (
-	"golang.org/x/crypto/bcrypt"
+	"coderero.dev/projects/go/gin/hello/pkg/utils"
 )
 
 // The function HashPassword takes a raw password as input and returns its hashed version using bcrypt
 // algorithm.
 func HashPassword(password_raw string) (string, error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(password_raw), 7)
+	hashed_password, err := utils.CreatePassword(password_raw)
 	if err != nil {
 		return "", err
 	}
-	return string(hash), nil
+	return hashed_password, nil
 }
 
 // The function `ComparePassword` compares a raw password with a hashed password and returns true if
 // they match, and false otherwise.
 func ComparePassword(password_raw string, password_hashed string) bool {
-	err1 := bcrypt.CompareHashAndPassword([]byte(password_hashed), []byte(password_raw))
-	if err1 != nil {
+	err := utils.ComparePassword(password_raw, password_hashed)
+	if err != nil {
 		return false
 	}
 	return true
