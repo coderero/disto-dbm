@@ -20,7 +20,7 @@ type passwordParams struct {
 
 var nilString = ""
 
-var saltLength = 22
+var saltLength = 23
 var DefaultPasswordParams = passwordParams{R: 8, N: 14, s: 43}
 
 var MisMatchedError = fmt.Errorf("pass: provided password does not match the actual password")
