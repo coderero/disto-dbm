@@ -199,8 +199,8 @@ func (AuthController) Login(c *gin.Context) {
 
 	// The `ComparePassword` function is used to compare the password provided by the user during login
 	// with the hashed password stored in the database.
-	if !security.ComparePassword(login.Password, registeredObj.Password) {
-		c.JSON(http.StatusUnauthorized, types.Response{
+	if security.ComparePassword(login.Password, registeredObj.Password) {
+		c.JSON(http.StatusBadRequest, types.Response{
 			Status: types.Status{
 				Code: http.StatusUnauthorized,
 				Msg:  "username or password is incorrect",
@@ -385,7 +385,6 @@ func (AuthController) RefreshToken(c *gin.Context) {
 		},
 	})
 }
-
 func (AuthController) IsLoggedIn(c *gin.Context) {
 	// The `token` variable is used to get the access token from the request header.
 	token := c.Request.Header.Get("Authorization")
@@ -397,22 +396,30 @@ func (AuthController) IsLoggedIn(c *gin.Context) {
 
 	// Check if the token is empty and if the access token and refresh token are nil.
 	if token == "" && raw_accessToken == nil && raw_refreshToken == nil {
-		c.JSON(http.StatusBadRequest, types.Response{
+		c.JSON(http.StatusOK, types.Response{
 			Status: types.Status{
-				Code: http.StatusBadRequest,
-				Msg:  "no token provided (i.e. you are not logged in).",
-			}})
+				Code: http.StatusOK,
+				Msg:  "not logged in",
+			},
+			Data: map[string]any{
+				"logged_in": false,
+			},
+		})
 		return
 	}
 
 	// The `revokedOrExpired` variable is used to check if the access token and refresh token are revoked or
 	// expired.
 	revokedOrExpired := (cache.IsTokenRevoked(token) && cache.IsTokenRevoked(raw_accessToken.Value) && cache.IsTokenRevoked(raw_refreshToken.Value)) || (security.IsTokenExpired(token) && security.IsTokenExpired(raw_accessToken.Value) && security.IsTokenExpired(raw_refreshToken.Value))
+
 	if revokedOrExpired {
 		c.JSON(http.StatusBadRequest, types.Response{
 			Status: types.Status{
-				Code: http.StatusBadRequest,
-				Msg:  "token expired or revoked",
+				Code: http.StatusOK,
+				Msg:  "not logged in",
+			},
+			Data: map[string]any{
+				"logged_in": false,
 			},
 		})
 		return
@@ -423,7 +430,10 @@ func (AuthController) IsLoggedIn(c *gin.Context) {
 	c.JSON(http.StatusOK, types.Response{
 		Status: types.Status{
 			Code: http.StatusOK,
-			Msg:  "logged In",
+			Msg:  "logged in",
+		},
+		Data: map[string]any{
+			"logged_in": true,
 		},
 	})
 }

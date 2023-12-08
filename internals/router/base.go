@@ -31,10 +31,10 @@ func Router() *gin.Engine {
 	r.Use(middleware.RateLimitHandler(1000, time.Minute))
 	r.Use(middleware.RateLimitHandler(100, time.Second))
 	r.Use(cors.New(cors.Config{
-		AllowOrigins: strings.Split(os.Getenv("ALLOWED_ORIGINS"), ","),
-
-		AllowHeaders:     []string{"Origin", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"},
 		AllowCredentials: true,
+		AllowOrigins:     strings.Split(os.Getenv("ALLOWED_ORIGINS"), ","),
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"},
 		MaxAge:           12 * time.Hour,
 	}))
 
